@@ -376,34 +376,35 @@ rm -rf /tmp/e2e_bags/rt
 ros2 launch tutorial_sim sim.launch.py rviz:=false > /tmp/e2e_sim_for_bag.log 2>&1 &
 SIMPID=$!
 
-# Wait for /joint_states to APPEAR on the topic list
-for _ in $(seq 1 50); do
+# Wait for /joint_states to APPEAR on the topic list (~6 s max).
+for _ in $(seq 1 30); do
   ros2 topic list 2>/dev/null | grep -q /joint_states && break
   sleep 0.2
 done
 
-# Give DDS publishers time to settle. The daemon's topic graph can be
-# stale after a daemon restart, so we don't try to pre-verify the publisher
-# count — we just sleep long enough that the bag's own DDS subscriber
-# discovers it.
-sleep 3
+# Brief settle so the bag's DDS subscriber discovers the publisher.
+sleep 1
 
-# Record. Two attempts in case the first misses discovery.
-# Use --topics (positional form is deprecated in newer rosbag2 and may
-# silently record nothing). Use SIGINT, not the default SIGTERM —
-# rosbag2 needs SIGINT to flush metadata.yaml on shutdown.
+# Record. Two attempts: a fast one (2 s record window), then a slower
+# retry only if the first misses DDS discovery.
+# Use --topics flag (positional form is deprecated in newer rosbag2 and
+# may silently record nothing). Use SIGINT, not the default SIGTERM —
+# rosbag2 needs SIGINT to flush metadata.yaml on shutdown. Add
+# --kill-after=2 so a hung bag dies in bounded time.
 bag_ok=0
-for attempt in 1 2; do
+for attempt_window in 2 4; do
   rm -rf /tmp/e2e_bags/rt
-  ( cd /tmp/e2e_bags && timeout -s INT 6 ros2 bag record -o rt --topics /joint_states /tf \
+  ( cd /tmp/e2e_bags && \
+    timeout -s INT --kill-after=2 "$attempt_window" \
+       ros2 bag record -o rt --topics /joint_states /tf \
        > "/tmp/e2e_bag_rec.log" 2>&1 || true )
-  # Give rosbag2 a moment to finalize after SIGINT.
-  sleep 1
+  # Brief finalize wait after SIGINT.
+  sleep 0.4
   if [[ -f /tmp/e2e_bags/rt/metadata.yaml ]]; then
     bag_ok=1; break
   fi
-  # Retry — wait another beat for DDS to converge.
-  sleep 2
+  # Tiny pause before the longer retry.
+  sleep 0.5
 done
 
 if (( bag_ok == 1 )); then
@@ -431,17 +432,20 @@ else
   skip "rosbag info — no bag to query"
 fi
 
-# Stop the sim before replay
-kill -TERM $SIMPID 2>/dev/null; wait $SIMPID 2>/dev/null
+# Stop the sim before replay — INT first (clean), then KILL fallback.
+kill -INT $SIMPID 2>/dev/null
+( sleep 1.5 && kill -KILL $SIMPID 2>/dev/null ) &
+wait $SIMPID 2>/dev/null
 cleanup_phase
 
 # Replay — should republish /joint_states (only if record succeeded)
 if (( bag_ok == 1 )); then
-  timeout -s INT 5 ros2 bag play /tmp/e2e_bags/rt > /tmp/e2e_bag_play.log 2>&1 &
+  timeout -s INT --kill-after=1 3 ros2 bag play /tmp/e2e_bags/rt \
+    > /tmp/e2e_bag_play.log 2>&1 &
   PLAY_PID=$!
-  # Wait up to 4 s for the topic to reappear on the graph
+  # Wait up to ~2 s for the topic to reappear on the graph.
   saw=0
-  for _ in $(seq 1 20); do
+  for _ in $(seq 1 10); do
     if ros2 topic list 2>/dev/null | grep -q /joint_states; then
       saw=1; break
     fi
@@ -452,7 +456,9 @@ if (( bag_ok == 1 )); then
   else
     fail "rosbag play did not republish /joint_states"
   fi
-  kill -INT $PLAY_PID 2>/dev/null; wait $PLAY_PID 2>/dev/null
+  kill -INT $PLAY_PID 2>/dev/null
+  ( sleep 1 && kill -KILL $PLAY_PID 2>/dev/null ) &
+  wait $PLAY_PID 2>/dev/null
 else
   skip "rosbag play — no bag to play"
 fi
