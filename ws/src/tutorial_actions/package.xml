@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>tutorial_actions</name>
+  <version>0.1.0</version>
+  <description>Lesson 04 — actions. Long-running goals with feedback and cancellation, the right shape for motion.</description>
+  <maintainer email="tutorial@example.com">ROS Tutorial</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>action_msgs</depend>
+  <depend>example_interfaces</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

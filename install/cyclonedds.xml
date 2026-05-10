@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CycloneDDS profile for the Unitree G1 bridge.
+  Edit name="eth0" to match your robot-facing interface (run `ip -br addr`).
+-->
+<CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain Id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface autodetermine="false" name="eth0" priority="default" multicast="default" />
+      </Interfaces>
+      <AllowMulticast>true</AllowMulticast>
+      <MaxMessageSize>65500B</MaxMessageSize>
+    </General>
+    <Internal>
+      <Watermarks>
+        <WhcHigh>500kB</WhcHigh>
+      </Watermarks>
+    </Internal>
+  </Domain>
+</CycloneDDS>

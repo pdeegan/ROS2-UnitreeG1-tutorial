@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>tutorial_lifecycle</name>
+  <version>0.1.0</version>
+  <description>Lesson 05 — managed lifecycle nodes. The right pattern for any controller that should never run before it's ready.</description>
+  <maintainer email="tutorial@example.com">ROS Tutorial</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

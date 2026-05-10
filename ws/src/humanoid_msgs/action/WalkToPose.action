@@ -1,0 +1,14 @@
+# Goal — where to walk, in map frame, with timing constraint.
+geometry_msgs/Pose2D target
+float32 max_linear_speed     # m/s, capped by controller; 0 = use default
+float32 timeout_s            # abort if not arrived
+---
+# Result — final pose, why we stopped.
+geometry_msgs/Pose2D final_pose
+bool arrived
+string outcome               # "arrived" | "timeout" | "canceled" | "safety_disengaged"
+---
+# Feedback — periodic during execution.
+geometry_msgs/Pose2D current_pose
+float32 distance_remaining   # m
+float32 eta_s                # estimated time to arrival

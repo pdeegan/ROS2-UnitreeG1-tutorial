@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Conda / micromamba env (the heavy one — recreated by install scripts)
+.env_ros2/
+.micromamba/
+
+# Optional pip layer venv (if a contributor uses one)
+.venv/
+
+# Colcon build artifacts
+ws/build/
+ws/install/
+ws/log/
+
+# OS / editor noise
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Saved diagnostic outputs
+doctor_report_*.txt
+
+# Vendored Unitree G1 URDF + meshes (~150 MB).
+# Recreated by `bash install/06_fetch_g1_assets.sh`. Don't commit.
+ws/src/g1_description/
+
+# Local test outputs
+/tmp/e2e_*.log

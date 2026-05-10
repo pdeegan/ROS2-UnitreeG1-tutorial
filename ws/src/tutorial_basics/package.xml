@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>tutorial_basics</name>
+  <version>0.1.0</version>
+  <description>Lesson 01 — minimal rclpy node, structured logging, and what `ros2 run` actually runs.</description>
+  <maintainer email="tutorial@example.com">ROS Tutorial</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

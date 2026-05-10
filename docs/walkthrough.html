@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROS 2 for Humanoids — Walkthrough</title>
+<style>
+:root {
+  --bg: #0f1115;
+  --panel: #161922;
+  --panel-2: #1c2030;
+  --ink: #e5e7eb;
+  --ink-dim: #9ca3af;
+  --accent: #7dd3fc;
+  --accent-2: #fbbf24;
+  --warn: #f87171;
+  --ok: #86efac;
+  --line: #2a2f3e;
+  --code-bg: #0b0d12;
+  --code-ink: #d1d5db;
+  --code-kw: #c4b5fd;
+  --code-str: #fcd34d;
+  --code-com: #6b7280;
+  --code-num: #fda4af;
+  --code-fn: #93c5fd;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg); color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px; line-height: 1.65;
+}
+body { display: flex; min-height: 100vh; }
+nav.sidebar {
+  position: sticky; top: 0;
+  width: 260px; max-height: 100vh; overflow-y: auto;
+  background: var(--panel); border-right: 1px solid var(--line);
+  padding: 1.5rem 1.25rem;
+  flex-shrink: 0;
+}
+nav.sidebar h1 {
+  font-size: 1.1rem; margin: 0 0 .5rem 0;
+  color: var(--accent); letter-spacing: -.01em;
+}
+nav.sidebar p.tag {
+  margin: 0 0 1.25rem 0; color: var(--ink-dim); font-size: .82rem;
+}
+nav.sidebar ol {
+  list-style: none; padding: 0; margin: 0;
+  border-top: 1px solid var(--line);
+}
+nav.sidebar li {
+  border-bottom: 1px solid var(--line);
+}
+nav.sidebar a {
+  display: block; padding: .55rem .25rem;
+  color: var(--ink); text-decoration: none;
+  font-size: .92rem;
+}
+nav.sidebar a:hover { color: var(--accent); }
+nav.sidebar a .num {
+  display: inline-block; width: 1.8rem;
+  color: var(--accent-2); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+nav.sidebar a .sub {
+  display: block; color: var(--ink-dim); font-size: .78rem;
+  padding-left: 1.8rem; margin-top: .15rem;
+}
+main {
+  flex: 1; max-width: 920px;
+  padding: 3rem clamp(1.5rem, 4vw, 3rem);
+}
+h1.title {
+  font-size: 2.2rem; margin: 0 0 .25rem 0;
+  letter-spacing: -.01em;
+}
+p.subtitle {
+  color: var(--ink-dim); margin: 0 0 3rem 0;
+  font-size: 1.05rem;
+}
+section.lesson { margin: 0 0 4.5rem 0; }
+section.lesson > header {
+  border-left: 3px solid var(--accent); padding-left: 1rem;
+  margin: 0 0 1.5rem 0;
+}
+section.lesson > header .crumb {
+  color: var(--accent); font-size: .82rem; letter-spacing: .04em;
+  text-transform: uppercase; font-weight: 600;
+}
+section.lesson > header h2 {
+  margin: .35rem 0 .25rem 0; font-size: 1.65rem;
+  letter-spacing: -.01em;
+}
+section.lesson > header p.summary {
+  margin: 0; color: var(--ink-dim); font-size: 1.02rem;
+}
+section.lesson h3 {
+  margin: 2rem 0 .5rem 0; font-size: 1.15rem;
+  color: var(--accent-2);
+}
+section.lesson p { margin: .75rem 0; }
+section.lesson ul, section.lesson ol { padding-left: 1.4rem; }
+section.lesson li { margin: .25rem 0; }
+section.lesson strong { color: var(--accent); }
+section.lesson em { color: var(--ink-dim); font-style: italic; }
+section.lesson p.hint {
+  margin: -.25rem 0 .75rem 0;
+  padding: .35rem .6rem;
+  background: rgba(125,211,252,0.08);
+  border-left: 2px solid var(--accent);
+  font-size: .9rem;
+  color: var(--ink-dim);
+}
+section.lesson p.hint em { color: var(--ink); }
+section.lesson kbd {
+  background: var(--code-bg); color: var(--accent-2);
+  padding: .05rem .4rem; border-radius: 3px;
+  border: 1px solid var(--line);
+  font-family: "JetBrains Mono", "Fira Mono", Menlo, Consolas, monospace;
+  font-size: .85em;
+}
+section.lesson .toolgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+section.lesson .toolcard {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: .9rem 1rem;
+}
+section.lesson .toolcard h4 {
+  margin: 0 0 .35rem 0;
+  font-size: .98rem;
+  color: var(--accent);
+}
+section.lesson .toolcard p {
+  margin: 0 0 .5rem 0;
+  font-size: .9rem;
+  color: var(--ink-dim);
+}
+section.lesson .toolcard pre {
+  margin: 0;
+  font-size: .82rem;
+  padding: .6rem .7rem;
+}
+section.lesson code {
+  background: var(--code-bg); color: var(--code-ink);
+  padding: .1rem .35rem; border-radius: 3px;
+  font-family: "JetBrains Mono", "Fira Mono", Menlo, Consolas, monospace;
+  font-size: .9em;
+}
+pre {
+  background: var(--code-bg); color: var(--code-ink);
+  padding: 1rem 1.1rem; border-radius: 6px;
+  border: 1px solid var(--line);
+  font-family: "JetBrains Mono", "Fira Mono", Menlo, Consolas, monospace;
+  font-size: .88rem; line-height: 1.55;
+  overflow-x: auto;
+}
+pre .kw  { color: var(--code-kw); }
+pre .str { color: var(--code-str); }
+pre .com { color: var(--code-com); font-style: italic; }
+pre .num { color: var(--code-num); }
+pre .fn  { color: var(--code-fn); }
+pre .pmt { color: var(--accent-2); }
+.callout {
+  background: var(--panel-2);
+  border-left: 3px solid var(--accent-2);
+  padding: .9rem 1.1rem;
+  margin: 1.25rem 0;
+  border-radius: 4px;
+}
+.callout.warn { border-left-color: var(--warn); }
+.callout.ok   { border-left-color: var(--ok); }
+.callout > strong:first-child {
+  display: block; margin-bottom: .25rem;
+  color: var(--accent-2); font-size: .85rem;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.callout.warn > strong:first-child { color: var(--warn); }
+.callout.ok   > strong:first-child { color: var(--ok); }
+table {
+  width: 100%; border-collapse: collapse; margin: 1rem 0;
+  font-size: .94rem;
+}
+th, td {
+  border-bottom: 1px solid var(--line);
+  padding: .55rem .65rem; text-align: left;
+}
+th { color: var(--accent-2); font-weight: 600; }
+td code { font-size: .85em; }
+hr {
+  border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0;
+}
+footer {
+  margin-top: 5rem; padding-top: 2rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-dim); font-size: .85rem;
+}
+@media (max-width: 900px) {
+  body { flex-direction: column; }
+  nav.sidebar { width: 100%; max-height: none; position: relative; }
+  main { padding: 2rem 1.25rem; max-width: 100%; }
+}
+
+/* ─────────── copy-to-clipboard buttons on every <pre> ─────────── */
+.codewrap {
+  position: relative;
+  margin: 1rem 0;
+}
+.codewrap pre { margin: 0; }
+.copy-btn {
+  position: absolute;
+  top: 6px; right: 6px;
+  padding: .25rem .55rem;
+  font-size: .7rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--ink-dim);
+  background: rgba(20, 24, 36, .92);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s, color .15s, background .15s;
+  user-select: none;
+  z-index: 2;
+  letter-spacing: .03em;
+}
+.codewrap:hover .copy-btn,
+.copy-btn:focus-visible { opacity: 1; }
+.copy-btn:hover {
+  color: var(--accent);
+  background: rgba(20, 24, 36, 1);
+  border-color: var(--accent);
+}
+.copy-btn.copied {
+  color: var(--ok);
+  border-color: var(--ok);
+  opacity: 1;
+}
+
+/* Per-line copy buttons in command-style blocks */
+.cmd-line {
+  position: relative;
+  display: block;
+}
+.cmd-line .line-copy {
+  position: absolute;
+  right: -.15rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0 .35rem;
+  height: 1.4em;
+  line-height: 1.4em;
+  font-size: .65rem;
+  font-family: inherit;
+  color: var(--ink-dim);
+  background: rgba(20,24,36,.92);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s, color .12s, border-color .12s;
+  user-select: none;
+}
+.cmd-line:hover .line-copy { opacity: .95; }
+.cmd-line .line-copy:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.cmd-line .line-copy.copied {
+  color: var(--ok);
+  border-color: var(--ok);
+  opacity: 1;
+}
+
+/* ─────────── sidebar search box + results ─────────── */
+.searchbox {
+  position: relative;
+  margin: 0 0 1rem 0;
+}
+.searchbox input {
+  width: 100%;
+  padding: .55rem .7rem .55rem 2rem;
+  background: var(--code-bg);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-size: .88rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s, background .15s;
+}
+.searchbox input::placeholder { color: var(--ink-dim); }
+.searchbox input:focus {
+  border-color: var(--accent);
+  background: #0d1018;
+}
+.searchbox::before {
+  content: "⌕";
+  position: absolute;
+  left: .65rem;
+  top: 50%;
+  transform: translateY(-52%);
+  color: var(--ink-dim);
+  font-size: 1rem;
+  pointer-events: none;
+}
+.searchbox kbd.kshort {
+  position: absolute;
+  right: .5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: .7rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: .05rem .3rem;
+  border-radius: 3px;
+  pointer-events: none;
+}
+.searchbox input:focus ~ kbd.kshort { display: none; }
+
+#search-results {
+  display: none;
+  margin: -.5rem 0 1rem 0;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+#search-results.open { display: block; }
+#search-results .res {
+  display: block;
+  padding: .55rem .75rem;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+#search-results .res:last-child { border-bottom: none; }
+#search-results .res:hover,
+#search-results .res.active {
+  background: rgba(125,211,252,0.08);
+}
+#search-results .res .ttl {
+  color: var(--accent);
+  font-size: .85rem;
+  font-weight: 600;
+  margin-bottom: .15rem;
+}
+#search-results .res .ttl .badge {
+  display: inline-block;
+  margin-right: .35rem;
+  font-size: .65rem;
+  padding: .05rem .35rem;
+  border-radius: 3px;
+  background: rgba(251, 191, 36, .14);
+  color: var(--accent-2);
+  vertical-align: middle;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+#search-results .res .ttl .badge.ref {
+  background: rgba(125, 211, 252, .12);
+  color: var(--accent);
+}
+#search-results .res .snip {
+  color: var(--ink-dim);
+  font-size: .78rem;
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#search-results .res .snip mark {
+  background: rgba(251,191,36,0.25);
+  color: var(--ink);
+  border-radius: 2px;
+  padding: 0 .12rem;
+}
+#search-results .empty {
+  padding: .75rem;
+  font-size: .85rem;
+  color: var(--ink-dim);
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <h1>ROS 2 for Humanoids</h1>
+  <p class="tag">Debian/WSL2 · RoboStack · Unitree G1</p>
+  <div class="searchbox">
+    <input id="search-input" type="search" placeholder="Search the tutorial…" autocomplete="off" spellcheck="false">
+    <kbd class="kshort">/</kbd>
+  </div>
+  <div id="search-results" role="listbox" aria-label="Search results"></div>
+  <ol>
+    <li><a href="#eli5"><span class="num">★</span>ROS 2 in 10 minutes<span class="sub">read this first</span></a></li>
+    <li><a href="#install"><span class="num">00</span>Install &amp; verify<span class="sub">Get the env running</span></a></li>
+    <li><a href="#first"><span class="num">▸</span>First robot in rviz2<span class="sub">topics, services, params live</span></a></li>
+    <li><a href="#L01"><span class="num">01</span>A minimal node<span class="sub">init, spin, shutdown</span></a></li>
+    <li><a href="#L02"><span class="num">02</span>Pub/sub + QoS<span class="sub">why best_effort matters</span></a></li>
+    <li><a href="#L03"><span class="num">03</span>Services<span class="sub">one-shot state changes</span></a></li>
+    <li><a href="#L04"><span class="num">04</span>Actions<span class="sub">long-running goals</span></a></li>
+    <li><a href="#L05"><span class="num">05</span>Lifecycle nodes<span class="sub">deliberate activation</span></a></li>
+    <li><a href="#L06"><span class="num">06</span>TF2<span class="sub">where is the head?</span></a></li>
+    <li><a href="#toolkit"><span class="num">▸</span>Roboticist's toolkit<span class="sub">rqt, bag, every CLI</span></a></li>
+    <li><a href="#sim"><span class="num">▸</span>Real Unitree G1 URDF<span class="sub">upstream meshes in rviz2</span></a></li>
+    <li><a href="#L07"><span class="num">07</span>G1 bridge<span class="sub">DDS ↔ ROS 2</span></a></li>
+    <li><a href="#L08"><span class="num">08</span>Voice I/O<span class="sub">listen &amp; speak</span></a></li>
+    <li><a href="#L09"><span class="num">09</span>High-level control<span class="sub">sit, stand, wave</span></a></li>
+    <li><a href="#further"><span class="num">→</span>What to build next</a></li>
+  </ol>
+</nav>
+<main>
+<h1 class="title">ROS 2 for Humanoids</h1>
+<p class="subtitle">From a one-node "hello" to a Unitree G1 that listens, talks, and moves. Nine lessons, one workspace, no Docker.</p>
+<p class="subtitle" style="font-size:.85rem;margin-top:-2rem;">
+  Tip: hover any code block to copy the whole thing, or hover a single line for a per-line copy — the <code>$</code> prompt is stripped automatically. Press <kbd>/</kbd> to search the entire tutorial + reference docs.
+</p>
+
+<!-- ============================================================ -->
+<section class="lesson" id="eli5">
+<header>
+  <div class="crumb">★ start here</div>
+  <h2>ROS 2 in 10 minutes — every core concept, explained simply</h2>
+  <p class="summary">A robot's nervous system, in plain language. Read this first; the rest of the tutorial assumes you've internalized these ideas.</p>
+</header>
+
+<h3>The one-sentence definition</h3>
+<p><strong>ROS 2 is the operating system for a robot's nervous system.</strong> It's not Linux — your robot already runs Linux. It's the layer above Linux that lets a dozen small programs (each watching one sensor, each driving one motor, each making one decision) talk to each other without knowing where each other lives, without crashing when one of them dies, and without needing a single "main" program.</p>
+
+<h3>Why "2"? The forty-second history</h3>
+<p>ROS 1 (2007–2025) had a master process — a phone book everyone called into. Lose the master, lose the robot. ROS 2 (2017–) replaced that with <strong>DDS</strong>, a peer-to-peer messaging standard borrowed from aerospace. Every node finds every other node by listening on the network. No central process. No single point of failure. That's the whole point of the rewrite.</p>
+
+<h3>The five concepts you actually need</h3>
+
+<h3>① Node — a single small program</h3>
+<p>A <strong>node</strong> is one process that does one thing. The camera driver is a node. The motor controller is a node. The face detector is a node. A real robot runs <em>dozens</em> of nodes at once, each isolated, each replaceable.</p>
+<p class="hint">Mental model: <em>each node is a Linux process — htop sees it.</em> Crash one node, the rest keep running.</p>
+
+<h3>② Topic — a public bulletin board</h3>
+<p>A <strong>topic</strong> is a named channel that any node can publish to and any node can subscribe to. Nobody addresses anyone directly. The camera publishes images to <code>/camera/image</code>; whoever cares — the face detector, the recorder, the dashboard — subscribes to that name. The camera doesn't know they exist.</p>
+<p>You'll inspect topics constantly:</p>
+<pre><span class="pmt">$</span> ros2 topic list                       <span class="com"># every topic right now</span>
+<span class="pmt">$</span> ros2 topic echo /joint_states         <span class="com"># watch messages flow</span>
+<span class="pmt">$</span> ros2 topic hz /joint_states           <span class="com"># at what rate?</span>
+<span class="pmt">$</span> ros2 topic info /joint_states -v      <span class="com"># who's publishing, what QoS?</span></pre>
+<p class="hint">Mental model: <em>a Slack channel</em>. People post; whoever's subscribed sees it. Posters and readers don't know each other.</p>
+
+<h3>③ Message — a typed letter</h3>
+<p>Topics carry <strong>messages</strong>, and every topic has exactly one message type. <code>/camera/image</code> carries <code>sensor_msgs/Image</code>. <code>/cmd_vel</code> carries <code>geometry_msgs/Twist</code>. The type is a contract: subscribers know what fields to expect.</p>
+<pre><span class="pmt">$</span> ros2 topic type /joint_states           <span class="com"># sensor_msgs/msg/JointState</span>
+<span class="pmt">$</span> ros2 interface show sensor_msgs/msg/JointState
+Header header
+string[] name
+float64[] position
+float64[] velocity
+float64[] effort</pre>
+<p class="hint">Mental model: <em>a typed envelope</em>. Same channel name + same message type on both ends, or no mail is delivered.</p>
+
+<h3>④ Service — a phone call</h3>
+<p>A <strong>service</strong> is request/reply. Caller sends a request, blocks (or waits asynchronously), gets a single response. Use this for atomic state changes: "switch to damping mode," "reset the IMU bias," "start recording."</p>
+<pre><span class="pmt">$</span> ros2 service list
+<span class="pmt">$</span> ros2 service call /g1/safety/engage std_srvs/srv/Trigger</pre>
+<p class="hint">Mental model: <em>a phone call</em>. Calling makes you wait until someone answers. Topics are voicemail blasts to a list.</p>
+
+<h3>⑤ Action — a long phone call with status updates</h3>
+<p>An <strong>action</strong> is like a service that takes time and reports progress. Caller sends a goal, server accepts (or rejects), feedback streams during execution, and a single result lands at the end. The caller can <strong>cancel</strong> at any point.</p>
+<p>Motion commands are almost always actions: "walk to (1.5, 0)" takes seconds, the caller wants progress, and might want to stop the robot if a human walks in.</p>
+<pre><span class="pmt">$</span> ros2 action list
+<span class="pmt">$</span> ros2 action send_goal /fibonacci example_interfaces/action/Fibonacci '{order: 6}' --feedback</pre>
+
+<h3>Three smaller concepts you'll meet immediately</h3>
+
+<h3>⚙ Parameters — runtime config knobs</h3>
+<p>Each node has a flat dict of named, typed parameters. Tune things at runtime, not in code:</p>
+<pre><span class="pmt">$</span> ros2 param list /joint_animator
+<span class="pmt">$</span> ros2 param get /joint_animator pattern
+<span class="pmt">$</span> ros2 param set /joint_animator pattern walk</pre>
+
+<h3>🧭 TF — a coordinate-frame graph</h3>
+<p><strong>TF</strong> answers "where is X relative to Y?" for the whole robot. Each link (base, chest, head, left hand, camera, …) has a coordinate frame. TF stores every parent→child transform; you query the graph for any pair. Without TF, every node reinvents kinematics.</p>
+<pre><span class="pmt">$</span> ros2 run tf2_ros tf2_echo base_link head_link</pre>
+
+<h3>📡 QoS — quality-of-service for the data lane</h3>
+<p>Each pub/sub pair has a <strong>QoS profile</strong>: reliability (reliable / best-effort), durability (volatile / transient_local), depth (queue size), history. The profile must match on both ends or DDS routes nothing. Two profiles cover 95% of cases:</p>
+<ul>
+  <li><strong><code>sensor_data</code></strong> — best-effort, volatile, depth 5. For state streams (IMU, joints, lidar). Drop is OK; latest matters.</li>
+  <li><strong><code>reliable + transient_local</code></strong> — for latches. A safety bit, a map, a robot description. Late subscribers still see the last value.</li>
+</ul>
+
+<h3>The big picture: how a "robot program" looks</h3>
+<pre><span class="com">             ┌──────────────┐  publishes /joint_states</span>
+<span class="com">             │ motor driver │  ───────────────────────┐</span>
+<span class="com">             └──────────────┘                          │</span>
+<span class="com">                                                       ▼</span>
+<span class="com">             ┌──────────────┐  publishes /cmd_vel  ┌──────────────┐</span>
+<span class="com">             │   teleop     │ ───────────────────▶ │  controller  │</span>
+<span class="com">             └──────────────┘                       │  (subscribes)│</span>
+<span class="com">                                                    └──────┬───────┘</span>
+<span class="com">             ┌──────────────┐  service /set_mode          │</span>
+<span class="com">             │  GUI / shell │ ◀───────────────────────────┤</span>
+<span class="com">             └──────────────┘                              ▼</span>
+<span class="com">                                              publishes /lowcmd</span></pre>
+<p>None of these nodes know about each other. They know <em>names</em>: topic <code>/cmd_vel</code>, service <code>/set_mode</code>. Anyone can write a replacement for any node as long as it speaks the same topics. That's why ROS 2 is composable instead of monolithic.</p>
+
+<h3>The single command to remember</h3>
+<p>When you're confused — first day, hundredth day — type:</p>
+<pre><span class="pmt">$</span> ros2 node list
+<span class="pmt">$</span> ros2 topic list
+<span class="pmt">$</span> ros2 topic info &lt;topic&gt; -v</pre>
+<p>The graph is the truth. If a node isn't there, it's not running. If a topic isn't there, no one is publishing to it. The CLI tells you what's true right now, regardless of what your code says it's doing.</p>
+
+<div class="callout ok">
+<strong>You're equipped</strong>
+That's everything. The rest of this walkthrough is just <em>practicing these five ideas</em> until they feel like reflexes. Topics, services, actions, params, TF — every robot you'll ever build with ROS 2 is some combination of those.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="install">
+<header>
+  <div class="crumb">step 00</div>
+  <h2>Install &amp; verify</h2>
+  <p class="summary">The shortest path to a green <code>ros2 doctor</code>. Idempotent. Safe to re-run.</p>
+</header>
+
+<p>This tutorial targets <strong>Debian 13 (trixie) WSL2 + NVIDIA discrete GPU</strong>. ROS 2 doesn't ship apt packages for trixie, so we use <strong>RoboStack</strong> &mdash; the same ROS 2 binaries, packaged for conda-forge, work on any Linux.</p>
+
+<p>The install scripts are <em>discovery-first</em>: they look for an existing micromamba and ROS env before downloading anything. If you already have <code>~/micromamba/envs/ros2_jazzy</code> from another project, the install will reuse it and only add the small audio extras on top.</p>
+
+<pre><span class="pmt">$</span> <span class="fn">bash</span> install/install.sh
+<span class="com"># the script will print, in order:</span>
+<span class="com">#   [01_micromamba] found micromamba: ~/.local/bin/micromamba</span>
+<span class="com">#   [02_robostack]  found working ROS 2 env: ~/micromamba/envs/ros2_jazzy</span>
+<span class="com">#   [03_pip_layer]  installing pip extras: sounddevice, onnxruntime, …</span>
+<span class="com">#   [04_unitree_sdk] unitree_sdk2py present (v?)</span>
+<span class="com">#   [05_verify]     install verified.</span></pre>
+
+<p>Once that's green, activate the env in your shell:</p>
+
+<pre><span class="pmt">$</span> <span class="fn">source</span> scripts/ros2_env.sh
+[ros2_env] ROS_DISTRO=jazzy  RMW=rmw_cyclonedds_cpp  DOMAIN=42
+[ros2_env] env: /home/you/micromamba/envs/ros2_jazzy
+[ros2_env] ws : /home/you/SOFTWARE/ROS_tutorial/ws</pre>
+
+<p>Then build the workspace:</p>
+
+<pre><span class="pmt">$</span> <span class="fn">cd</span> ws
+<span class="pmt">$</span> colcon build
+<span class="com"># 30 seconds to 2 minutes depending on what changed</span>
+<span class="pmt">$</span> <span class="fn">source</span> install/setup.bash
+<span class="pmt">$</span> ros2 pkg list <span class="kw">|</span> grep -E <span class="str">'tutorial_|g1_|humanoid'</span>
+g1_bridge
+g1_controller
+g1_speech
+humanoid_msgs
+tutorial_actions
+tutorial_basics
+tutorial_lifecycle
+tutorial_pubsub
+tutorial_services
+tutorial_tf</pre>
+
+<div class="callout">
+<strong>Where am I?</strong>
+If you ever lose track of the env state, <code>bash scripts/doctor.sh</code> dumps everything in one place — Python version, ROS distro, env packages, network interfaces, GPU presence — and writes a timestamped report you can paste into a bug report.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="first">
+<header>
+  <div class="crumb">▸ first robot</div>
+  <h2>Bring up a humanoid in rviz2 — your first ROS 2 robot</h2>
+  <p class="summary">A six-joint humanoid in 3D, animated in real time. Topics, services, and parameters all visible at once. Drive it before you write a line of code.</p>
+</header>
+
+<p>The package <code>tutorial_sim</code> brings up a toy humanoid: torso + head + two arms + two legs as URDF primitives. It's the lightest possible sim that's still a real ROS 2 robot — no physics, just kinematics. Three nodes come up via one launch file:</p>
+<ul>
+  <li><strong><code>robot_state_publisher</code></strong> — reads the URDF, republishes each link's transform on the TF tree given the current <code>/joint_states</code>.</li>
+  <li><strong><code>joint_animator</code></strong> — publishes <code>/joint_states</code> at 30 Hz with one of three patterns (<code>wave</code>, <code>walk</code>, <code>zero</code>).</li>
+  <li><strong><code>rviz2</code></strong> — preconfigured to show the RobotModel + TF + the world grid.</li>
+</ul>
+
+<h3>Bring it up</h3>
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh
+<span class="com"># rviz window opens — orange-and-blue humanoid waving its arms.</span>
+<span class="com"># Headless? Pass false as the third arg:</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh toy wave false</pre>
+
+<h3>What just happened — every concept from the intro, live</h3>
+
+<p>In a second shell, see the system you just stood up:</p>
+
+<pre><span class="pmt">$</span> <span class="fn">source</span> scripts/ros2_env.sh
+<span class="pmt">$</span> ros2 node list
+/joint_animator
+/robot_state_publisher
+/rviz2
+
+<span class="pmt">$</span> ros2 topic list -t
+/joint_states         sensor_msgs/msg/JointState
+/robot_description    std_msgs/msg/String
+/tf                   tf2_msgs/msg/TFMessage
+/tf_static            tf2_msgs/msg/TFMessage
+/parameter_events     rcl_interfaces/msg/ParameterEvent
+/rosout               rcl_interfaces/msg/Log</pre>
+
+<p>Watch the joint stream while the robot moves:</p>
+<pre><span class="pmt">$</span> ros2 topic echo /joint_states
+header:
+  stamp: { sec: 1778449045, nanosec: 412034567 }
+  frame_id: ''
+name:
+- left_shoulder_pitch
+- right_shoulder_pitch
+- left_elbow
+- right_elbow
+- left_hip_pitch
+- right_hip_pitch
+position: [-1.473, -1.527, 0.612, 0.388, 0.0, 0.0]
+---</pre>
+
+<p>Watch the rate (it should be exactly 30 Hz, the rate the animator publishes at):</p>
+<pre><span class="pmt">$</span> ros2 topic hz /joint_states
+average rate: 30.000</pre>
+
+<p>Publish to <code>/joint_states</code> directly — bypass the animator, hold any pose by hand:</p>
+<pre><span class="pmt">$</span> ros2 topic pub --once /joint_states sensor_msgs/msg/JointState \
+       <span class="str">'{name: ["left_shoulder_pitch","right_shoulder_pitch","left_elbow","right_elbow","left_hip_pitch","right_hip_pitch"], position: [-1.5, 0.0, 0.5, 0.0, 0.0, 0.0]}'</span>
+<span class="com"># the robot snaps to that pose, then the animator overrides on the next tick.</span>
+<span class="com"># to hold it: kill the animator with: ros2 lifecycle / or ctrl+c the launch.</span></pre>
+
+<h3>Tweak the animation pattern at runtime — exercise <code>ros2 param</code></h3>
+
+<pre><span class="pmt">$</span> ros2 param list /joint_animator
+pattern
+rate_hz
+use_sim_time
+
+<span class="pmt">$</span> ros2 param get /joint_animator pattern
+String value is: wave
+
+<span class="pmt">$</span> ros2 param set /joint_animator pattern walk
+Set parameter successful
+<span class="com"># the robot in rviz transitions to a walking gait, no restart needed</span>
+
+<span class="pmt">$</span> ros2 param set /joint_animator pattern zero
+<span class="com"># all joints relax to 0 — useful to verify the URDF zero pose visually</span></pre>
+
+<h3>Query the kinematics — exercise <code>tf2</code></h3>
+
+<pre><span class="pmt">$</span> ros2 run tf2_ros tf2_echo base_link head_link
+At time …
+- Translation: [0.000, 0.000, 0.450]
+- Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
+
+<span class="pmt">$</span> ros2 run tf2_ros tf2_echo base_link left_forearm_link
+<span class="com"># the forearm pose updates as the wave animation runs.</span>
+
+<span class="pmt">$</span> ros2 run tf2_tools view_frames
+<span class="com"># produces frames.pdf showing every parent→child link in the tree</span></pre>
+
+<h3>Drive a Twist topic — exercise the <code>cmd_vel</code> contract</h3>
+
+<p>The <code>twist_listener</code> entry point in <code>tutorial_sim</code> subscribes to <code>/cmd_vel</code> and prints what it sees. Pair it with <code>teleop_twist_keyboard</code> for the canonical "drive a robot from the keyboard" pattern:</p>
+<pre><span class="pmt">$</span> ros2 run tutorial_sim twist_listener
+[INFO] listening to /cmd_vel — try teleop_twist_keyboard to drive
+
+<span class="pmt">$</span> <span class="com"># in another shell:</span>
+<span class="pmt">$</span> ros2 run teleop_twist_keyboard teleop_twist_keyboard
+<span class="com"># press i, j, k, l — the listener prints arrows showing direction:</span>
+
+[INFO] vx=+0.50 m/s →→→→→→→→→→        wz=+0.00 rad/s
+[INFO] vx=+0.50 m/s →→→→→→→→→→        wz=+1.00 rad/s ⟳⟳⟳⟳⟳</pre>
+
+<div class="callout ok">
+<strong>What you've just learned in a 5-minute session</strong>
+You stood up a 3D humanoid, inspected its live topic graph, watched joint state stream by, queried the TF tree, switched its motion pattern at runtime via a parameter, and drove a velocity topic with a separate keyboard process you didn't write — every CLI verb you'll use against the real G1 in lessons 07–09. <em>The verbs don't change; only the robot does.</em>
+</div>
+
+<h3>Step up to the real Unitree G1 URDF — opt-in</h3>
+
+<p>The toy humanoid is intentionally simple. The same launch infrastructure can drive the <strong>real Unitree G1 URDF</strong> (29 DOF, full STL meshes, identical to what runs on the hardware). The fetch is opt-in because the assets are ~150 MB:</p>
+
+<pre><span class="pmt">$</span> <span class="fn">bash</span> install/06_fetch_g1_assets.sh
+<span class="com"># sparse-clones https://github.com/unitreerobotics/unitree_ros</span>
+<span class="com"># into ws/src/g1_description/  (URDF + meshes only)</span>
+
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/ros2_build.sh g1_description
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh g1
+<span class="com"># rviz now shows the real G1 — pelvis, legs, arms, head, all 29 joints.</span></pre>
+
+<p>The animator still publishes the same six joint names. On the real G1 those map to <code>left_shoulder_pitch_joint</code>, <code>left_elbow_joint</code>, etc. — the rest of the body sits at zero, which is the safe default. (Extending the animator to drive all 29 joints is a one-evening exercise; the URDF tells you the joint names — <code>ros2 param list</code> on the loaded model.)</p>
+
+<h3>Stop everything</h3>
+<p>Ctrl+C in the launch shell. <code>ros2 node list</code> goes empty. No daemons left running.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L01">
+<header>
+  <div class="crumb">lesson 01</div>
+  <h2>A minimal node — what <code>ros2 run</code> actually runs</h2>
+  <p class="summary">ROS 2 isn't a framework you import into <code>main()</code>. It's a runtime you join.</p>
+</header>
+
+<p>The smallest useful ROS 2 program is a class that extends <code>rclpy.node.Node</code>, a <code>main()</code> that calls <code>rclpy.init()</code>, and a <code>try/finally</code> that cleans up. <strong>Skipping the cleanup leaks a DDS participant</strong> &mdash; the robot will discover it again on the next launch and your topic graph fills with ghosts.</p>
+
+<pre><span class="kw">import</span> rclpy
+<span class="kw">from</span> rclpy.node <span class="kw">import</span> Node
+
+<span class="kw">class</span> <span class="fn">Hello</span>(Node):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        <span class="kw">super</span>().__init__(<span class="str">"hello"</span>)
+        self.declare_parameter(<span class="str">"period_s"</span>, <span class="num">1.0</span>)
+        period = <span class="kw">float</span>(self.get_parameter(<span class="str">"period_s"</span>).value)
+        self._count = <span class="num">0</span>
+        self._timer = self.create_timer(period, self._tick)
+
+    <span class="kw">def</span> <span class="fn">_tick</span>(self):
+        self._count += <span class="num">1</span>
+        self.get_logger().info(<span class="kw">f</span><span class="str">"hello (tick {self._count})"</span>)
+
+<span class="kw">def</span> <span class="fn">main</span>(args=<span class="kw">None</span>):
+    rclpy.init(args=args)
+    node = Hello()
+    <span class="kw">try</span>:
+        rclpy.spin(node)
+    <span class="kw">except</span> KeyboardInterrupt:
+        <span class="kw">pass</span>
+    <span class="kw">finally</span>:
+        node.destroy_node()
+        rclpy.shutdown()</pre>
+
+<p>Run it:</p>
+
+<pre><span class="pmt">$</span> ros2 run tutorial_basics hello
+[INFO] node up — name=hello period=1.0s
+[INFO] hello, humanoid (tick 1)
+[INFO] hello, humanoid (tick 2)
+<span class="com">^C</span>
+[INFO] interrupted — shutting down cleanly</pre>
+
+<p>Then verify it really is on the topic graph:</p>
+
+<pre><span class="pmt">$</span> ros2 node list
+/hello
+<span class="pmt">$</span> ros2 node info /hello
+<span class="com"># shows Subscribers, Publishers, Service Servers, …</span></pre>
+
+<div class="callout">
+<strong>What you just did</strong>
+You joined a DDS network. Other ROS 2 nodes anywhere on <code>ROS_DOMAIN_ID=42</code> can see <code>/hello</code>. The Unitree G1 also speaks CycloneDDS — the same runtime you're using here is what talks to the robot in lesson 07.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L02">
+<header>
+  <div class="crumb">lesson 02</div>
+  <h2>Pub/sub + QoS — why <code>best_effort</code> is the default for robots</h2>
+  <p class="summary">A 500 Hz IMU on <code>reliable</code> QoS saturates the network. Pick the right profile or lose the message that mattered.</p>
+</header>
+
+<p>The talker publishes a <code>sensor_msgs/JointState</code> at 50 Hz with the <strong>sensor_data</strong> QoS profile: best-effort, volatile, depth 5. A dropped sample is not retransmitted &mdash; the next one is already on the way.</p>
+
+<pre><span class="kw">from</span> rclpy.qos <span class="kw">import</span> qos_profile_sensor_data
+<span class="kw">from</span> sensor_msgs.msg <span class="kw">import</span> JointState
+
+self._pub = self.create_publisher(
+    JointState, <span class="str">"/joint_state"</span>, qos_profile_sensor_data)</pre>
+
+<p>The listener uses the matching QoS:</p>
+
+<pre>self._sub = self.create_subscription(
+    JointState, <span class="str">"/joint_state"</span>, self._on_state, qos_profile_sensor_data)</pre>
+
+<p>Bring up both in two shells:</p>
+
+<pre><span class="pmt">$</span> ros2 run tutorial_pubsub talker
+[INFO] publishing /joint_state @ 50.0 Hz, QoS=sensor_data
+<span class="pmt">$</span> ros2 run tutorial_pubsub listener
+[INFO] subscribed to /joint_state with sensor_data QoS
+[INFO] rx#    1  pos=[+0.000, +0.000, +0.500, -0.500]
+[INFO] rx#   26  pos=[+0.499, -0.499, +0.026, -0.026]</pre>
+
+<p>And inspect what the network actually carries:</p>
+
+<pre><span class="pmt">$</span> ros2 topic hz /joint_state
+average rate: 50.000
+<span class="pmt">$</span> ros2 topic info /joint_state -v
+<span class="com">Type: sensor_msgs/msg/JointState</span>
+<span class="com">Publisher count: 1</span>
+<span class="com">    QoS profile:</span>
+<span class="com">      Reliability: BEST_EFFORT</span>
+<span class="com">      Durability:  VOLATILE</span>
+<span class="com">      Depth:       5</span></pre>
+
+<div class="callout warn">
+<strong>Common gotcha</strong>
+If you forget to match QoS profiles, DDS will treat publisher and subscriber as <em>incompatible</em> and the listener gets nothing &mdash; <em>no error</em>, just silence. Always check <code>ros2 topic info -v</code> when a subscription seems dead.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L03">
+<header>
+  <div class="crumb">lesson 03</div>
+  <h2>Services — the right shape for rare, atomic state changes</h2>
+  <p class="summary">Topics are for streams. Services are for "go to damping mode, yes or no?"</p>
+</header>
+
+<p>The posture server exposes two <code>std_srvs/Trigger</code> services &mdash; the simplest possible service type: no request fields, a <code>bool success</code> and <code>string message</code> reply. That's enough for most posture transitions when the <em>intent</em> is the whole request.</p>
+
+<pre><span class="kw">from</span> std_srvs.srv <span class="kw">import</span> Trigger
+
+self._sit = self.create_service(
+    Trigger, <span class="str">"/posture/sit"</span>, self._on_sit)
+
+<span class="kw">def</span> <span class="fn">_on_sit</span>(self, req, resp):
+    self._think()
+    <span class="kw">if</span> self._coinflip():
+        resp.success = <span class="kw">True</span>
+        resp.message = <span class="str">"sitting"</span>
+    <span class="kw">else</span>:
+        resp.success = <span class="kw">False</span>
+        resp.message = <span class="str">"controller refused — IMU bias too high"</span>
+    <span class="kw">return</span> resp</pre>
+
+<p>Two ways to call it:</p>
+
+<pre><span class="com"># quick-and-dirty from the CLI:</span>
+<span class="pmt">$</span> ros2 service call /posture/sit std_srvs/srv/Trigger
+response: std_srvs.srv.Trigger_Response(success=True, message=<span class="str">'sitting'</span>)
+
+<span class="com"># from the lesson's client (handles timeout + reachability):</span>
+<span class="pmt">$</span> ros2 run tutorial_services client sit
+[INFO] sit: OK — sitting</pre>
+
+<p>Why a custom client? Because robot code can't accept "service unreachable" as a silent failure mode. The CLI papers over that; the client doesn't:</p>
+
+<pre><span class="kw">def</span> <span class="fn">call</span>(self, timeout_s=<span class="num">2.0</span>):
+    <span class="kw">if not</span> self._client.wait_for_service(timeout_sec=timeout_s):
+        <span class="kw">return</span> <span class="kw">False</span>, <span class="kw">f</span><span class="str">"service /posture/{self._posture} unreachable"</span>
+    future = self._client.call_async(Trigger.Request())
+    rclpy.spin_until_future_complete(self, future, timeout_sec=timeout_s)
+    <span class="kw">if not</span> future.done():
+        <span class="kw">return</span> <span class="kw">False</span>, <span class="str">"service call timed out"</span>
+    <span class="kw">return</span> future.result().success, future.result().message</pre>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L04">
+<header>
+  <div class="crumb">lesson 04</div>
+  <h2>Actions — long-running goals with feedback and cancel</h2>
+  <p class="summary">The right shape for motion. A walk-to-pose is an action, not a service.</p>
+</header>
+
+<p>An action has four moving parts:</p>
+<ul>
+  <li><strong>Goal</strong> — what to achieve ("walk to (1.5, 0)").</li>
+  <li><strong>Feedback</strong> — published while running ("at (0.8, 0), 0.7 m to go").</li>
+  <li><strong>Result</strong> — published once, when finished ("arrived").</li>
+  <li><strong>Cancel</strong> — the caller can withdraw mid-flight; the server stops safely.</li>
+</ul>
+
+<p>We use <code>example_interfaces/Fibonacci</code> here as the shape-only demo &mdash; the same pattern drives the G1 <code>walk_to_pose</code> action in lesson 09.</p>
+
+<pre><span class="kw">from</span> rclpy.action <span class="kw">import</span> ActionServer, CancelResponse, GoalResponse
+<span class="kw">from</span> example_interfaces.action <span class="kw">import</span> Fibonacci
+
+self._action = ActionServer(
+    self, Fibonacci, <span class="str">"/fibonacci"</span>,
+    execute_callback=self._execute,
+    goal_callback=self._on_goal,
+    cancel_callback=self._on_cancel)
+
+<span class="kw">def</span> <span class="fn">_execute</span>(self, goal_handle):
+    feedback = Fibonacci.Feedback()
+    feedback.sequence = [<span class="num">0</span>, <span class="num">1</span>]
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="kw">range</span>(<span class="num">2</span>, goal_handle.request.order + <span class="num">1</span>):
+        <span class="kw">if</span> goal_handle.is_cancel_requested:
+            goal_handle.canceled()
+            <span class="kw">return</span> Fibonacci.Result()
+        feedback.sequence.append(
+            feedback.sequence[i-<span class="num">1</span>] + feedback.sequence[i-<span class="num">2</span>])
+        goal_handle.publish_feedback(feedback)
+        time.sleep(<span class="num">0.5</span>)
+    goal_handle.succeed()
+    result = Fibonacci.Result()
+    result.sequence = feedback.sequence
+    <span class="kw">return</span> result</pre>
+
+<p>Drive it from the CLI:</p>
+
+<pre><span class="pmt">$</span> ros2 action send_goal /fibonacci example_interfaces/action/Fibonacci \
+       <span class="str">'{order: 10}'</span> --feedback
+<span class="com">Sending goal:</span>
+<span class="com">    order: 10</span>
+<span class="com">Goal accepted with ID: …</span>
+<span class="com">Feedback:</span>
+<span class="com">    sequence: [0, 1, 1]</span>
+<span class="com">Feedback:</span>
+<span class="com">    sequence: [0, 1, 1, 2]</span>
+<span class="com">…</span>
+<span class="com">Result:</span>
+<span class="com">    sequence: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55]</span></pre>
+
+<div class="callout">
+<strong>Topic, service, or action?</strong>
+<ul>
+  <li><strong>Topic</strong> for continuous streams (joint state, IMU).</li>
+  <li><strong>Service</strong> for atomic state changes that complete quickly.</li>
+  <li><strong>Action</strong> for goals that take time and might be canceled.</li>
+</ul>
+Motion commands are almost always actions. The G1 bridge publishes <code>/g1/lowstate</code> on a topic and accepts walk goals via an action.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L05">
+<header>
+  <div class="crumb">lesson 05</div>
+  <h2>Lifecycle nodes — the right pattern for anything safety-critical</h2>
+  <p class="summary">A vanilla node is always on. A managed node says yes only when the operator says yes.</p>
+</header>
+
+<p>Lifecycle nodes give you a state machine: <code>unconfigured → inactive → active → inactive → finalized</code>. Each transition is a hook (<code>on_configure</code>, <code>on_activate</code>, etc.) where you control what happens. Subscribers and timers stay registered across <code>active ↔ inactive</code>; publishers stay alive but stop sending in <code>inactive</code>.</p>
+
+<pre><span class="kw">from</span> rclpy.lifecycle <span class="kw">import</span> LifecycleNode, TransitionCallbackReturn
+
+<span class="kw">class</span> <span class="fn">LifecycleTalker</span>(LifecycleNode):
+    <span class="kw">def</span> <span class="fn">on_configure</span>(self, state):
+        self._pub = self.create_lifecycle_publisher(
+            String, <span class="str">"/lifecycle_heartbeat"</span>, <span class="num">10</span>)
+        <span class="kw">return</span> TransitionCallbackReturn.SUCCESS
+
+    <span class="kw">def</span> <span class="fn">on_activate</span>(self, state):
+        self._timer = self.create_timer(<span class="num">1.0</span>, self._tick)
+        <span class="kw">return super</span>().on_activate(state)
+
+    <span class="kw">def</span> <span class="fn">on_deactivate</span>(self, state):
+        self.destroy_timer(self._timer)
+        <span class="kw">return super</span>().on_deactivate(state)</pre>
+
+<p>Drive the state machine from a second shell:</p>
+
+<pre><span class="pmt">$</span> ros2 run tutorial_lifecycle lifecycle_talker
+[INFO] node starts UNCONFIGURED
+<span class="pmt">$</span> <span class="com"># in another shell:</span>
+<span class="pmt">$</span> ros2 lifecycle set /lifecycle_talker configure
+Transitioning successful
+<span class="pmt">$</span> ros2 lifecycle set /lifecycle_talker activate
+Transitioning successful
+<span class="pmt">$</span> ros2 topic echo /lifecycle_heartbeat
+<span class="com"># only now do messages flow</span></pre>
+
+<div class="callout">
+<strong>Why this matters for the G1</strong>
+The high-level controller (<a href="#L09">lesson 09</a>) is a lifecycle node. It allocates the <code>/g1/lowcmd</code> publisher in <code>configure</code>, starts sending in <code>activate</code>, and goes silent on <code>deactivate</code> &mdash; without tearing down the full node, so re-activation is fast.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L06">
+<header>
+  <div class="crumb">lesson 06</div>
+  <h2>TF2 — where is the head, relative to the floor, right now?</h2>
+  <p class="summary">A coordinate-frame graph for the whole robot. Query at any time, any historical instant.</p>
+</header>
+
+<p>Without TF2, every node that needs "where is the head" ends up subscribing to <code>/joint_state</code> and doing its own kinematics &mdash; wrong, slow, drifts. With TF2 you publish each parent→child transform once (static) or per cycle (dynamic), and anyone can ask:</p>
+
+<pre><span class="pmt">$</span> ros2 run tf2_ros tf2_echo base_link head_yaw_link
+At time …
+- Translation: [0.000, 0.000, 0.270]
+- Rotation:    in Quaternion [0.000, 0.000, 0.130, 0.991]</pre>
+
+<p>The lesson publishes one static transform (chest → head, 0.27 m up) and one dynamic transform (head → head_yaw, sine-wave yaw):</p>
+
+<pre><span class="kw">from</span> tf2_ros.static_transform_broadcaster <span class="kw">import</span> StaticTransformBroadcaster
+<span class="kw">from</span> geometry_msgs.msg <span class="kw">import</span> TransformStamped
+
+tf = TransformStamped()
+tf.header.stamp = self.get_clock().now().to_msg()
+tf.header.frame_id = <span class="str">"base_link"</span>
+tf.child_frame_id  = <span class="str">"head_link"</span>
+tf.transform.translation.z = <span class="num">0.27</span>
+tf.transform.rotation.w    = <span class="num">1.0</span>
+self._tf.sendTransform(tf)</pre>
+
+<div class="callout warn">
+<strong>The "TF goes silent" gotcha</strong>
+Dynamic transforms must update <code>header.stamp</code> on every publish. If you copy a <code>TransformStamped</code> and re-publish it without updating the timestamp, the TF buffer rejects it as stale and <code>tf2_echo</code> returns nothing. Fresh stamp every cycle.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="toolkit">
+<header>
+  <div class="crumb">▸ daily driver</div>
+  <h2>The roboticist's toolkit — every CLI &amp; rqt tool, demoed</h2>
+  <p class="summary">What an experienced ROS 2 user types ten times a day. Bring up <code>scripts/tools/sim_up.sh</code> in another shell, then walk this page.</p>
+</header>
+
+<p>You've already met the headline tools. This section is the full roster, in the order you'd reach for them when something is wrong (or right) with a live system. Every example below assumes the sim humanoid is running (<code>bash scripts/tools/sim_up.sh</code>) so you can copy-paste and see real output.</p>
+
+<h3>The graph: who is running, and who is talking to whom</h3>
+
+<div class="toolgrid">
+<div class="toolcard">
+  <h4>ros2 node list / info</h4>
+  <p>Names of every running node; per-node topics, services, actions, parameters.</p>
+  <pre><span class="pmt">$</span> ros2 node list
+<span class="pmt">$</span> ros2 node info /joint_animator</pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 topic list / type / info -v</h4>
+  <p>Names + types of every topic; per-topic publisher count and QoS profile.</p>
+  <pre><span class="pmt">$</span> ros2 topic list -t
+<span class="pmt">$</span> ros2 topic info /joint_states -v</pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 topic echo / hz / bw</h4>
+  <p>Stream messages, measure publish rate, measure bandwidth.</p>
+  <pre><span class="pmt">$</span> ros2 topic echo /joint_states
+<span class="pmt">$</span> ros2 topic hz /joint_states
+<span class="pmt">$</span> ros2 topic bw /tf</pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 topic pub</h4>
+  <p>Publish a message from the CLI — bypass any other node.</p>
+  <pre><span class="pmt">$</span> ros2 topic pub --rate 10 /cmd_vel \
+    geometry_msgs/msg/Twist <span class="str">'{linear: {x: 0.5}}'</span></pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 service list / call / type</h4>
+  <p>Every advertised service; invoke one; inspect its request/response shape.</p>
+  <pre><span class="pmt">$</span> ros2 service list
+<span class="pmt">$</span> ros2 service type /g1/safety/engage
+<span class="pmt">$</span> ros2 service call /g1/safety/engage std_srvs/srv/Trigger</pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 action list / send_goal / info</h4>
+  <p>Every action; send a goal with feedback; inspect server.</p>
+  <pre><span class="pmt">$</span> ros2 action list -t
+<span class="pmt">$</span> ros2 action send_goal /fibonacci \
+    example_interfaces/action/Fibonacci \
+    <span class="str">'{order: 6}'</span> --feedback</pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 param list / get / set / dump / load</h4>
+  <p>Tune nodes at runtime. Dump the full param dict to YAML, load it back.</p>
+  <pre><span class="pmt">$</span> ros2 param list
+<span class="pmt">$</span> ros2 param get /joint_animator pattern
+<span class="pmt">$</span> ros2 param set /joint_animator pattern walk
+<span class="pmt">$</span> ros2 param dump /joint_animator</pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 interface show</h4>
+  <p>Print the field shape of any msg / srv / action type, recursively.</p>
+  <pre><span class="pmt">$</span> ros2 interface show sensor_msgs/msg/Imu
+<span class="pmt">$</span> ros2 interface show humanoid_msgs/srv/SetMode</pre>
+</div>
+<div class="toolcard">
+  <h4>ros2 doctor</h4>
+  <p>Sanity-check the env: domain ID, RMW implementation, network interfaces.</p>
+  <pre><span class="pmt">$</span> ros2 doctor
+<span class="pmt">$</span> ros2 doctor --report</pre>
+</div>
+</div>
+
+<h3>Recording and replay — the second-most useful tool</h3>
+
+<p><strong><code>ros2 bag</code></strong> records every message on every topic to a file. Replay it and the rest of the system can't tell the difference between the live robot and the recording. This is how you debug an incident: bag the failure, replay it back into the same node graph, watch what goes wrong.</p>
+
+<p>The wrappers in <code>scripts/tools/</code> handle the file naming so you don't think about it:</p>
+
+<pre><span class="pmt">$</span> <span class="com"># record everything to bags/session_&lt;timestamp&gt;</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/bag_record.sh
+[INFO] Listening for topics... Press Ctrl-C to stop
+<span class="com"># … let the sim run for 10 seconds, then Ctrl+C …</span>
+
+<span class="pmt">$</span> ls bags/
+session_20260510_144202/
+
+<span class="pmt">$</span> ros2 bag info bags/session_20260510_144202
+Files:             session_20260510_144202_0.mcap
+Bag size:          48.1 KiB
+Storage id:        mcap
+ROS Distro:        jazzy
+Duration:          9.612s
+Messages:          412
+Topic information: Topic: /joint_states | Type: sensor_msgs/msg/JointState | Count: 289
+                   Topic: /tf           | Type: tf2_msgs/msg/TFMessage     | Count: 123
+
+<span class="pmt">$</span> <span class="com"># stop the live sim — the bag is now the source of truth</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/bag_play.sh
+<span class="pmt">$</span> ros2 topic echo /joint_states     <span class="com"># the wave session, replayed from disk</span></pre>
+
+<div class="callout">
+<strong>Bagged data is your golden test set</strong>
+A bag is the cheapest possible regression test. Record one good run, replay it daily into your changing codebase, watch the diff. The robot doesn't have to be present.
+</div>
+
+<h3>The rqt suite — GUI inspectors</h3>
+
+<p><strong><code>rqt</code></strong> is the umbrella GUI; each "plugin" is one inspection tool. Two are essential:</p>
+
+<div class="toolgrid">
+<div class="toolcard">
+  <h4>rqt_graph — live topic graph</h4>
+  <p>A box per node, an edge per topic. Best one-look diagnostic for "is the system wired up the way I think?"</p>
+  <pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_graph.sh
+<span class="com"># or: ros2 run rqt_graph rqt_graph</span></pre>
+</div>
+<div class="toolcard">
+  <h4>rqt_plot — live numeric plots</h4>
+  <p>Pick any numeric topic field, watch it as a strip chart. Critical for tuning gains, watching state oscillation, debugging filters.</p>
+  <pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_plot.sh \
+       /joint_states/position[0]</pre>
+</div>
+<div class="toolcard">
+  <h4>rqt_console — log viewer</h4>
+  <p>Filterable log stream from every node. Sort by severity, regex-match the message field.</p>
+  <pre><span class="pmt">$</span> ros2 run rqt_console rqt_console</pre>
+</div>
+<div class="toolcard">
+  <h4>rqt_topic / rqt_publisher / rqt_service_caller</h4>
+  <p>GUI versions of <code>topic echo</code>, <code>topic pub</code>, and <code>service call</code> — useful when you can't remember the exact YAML for a message.</p>
+  <pre><span class="pmt">$</span> ros2 run rqt_gui rqt_gui
+<span class="com"># Plugins → Topics / Services / Publishers</span></pre>
+</div>
+</div>
+
+<h3>One command for the live snapshot</h3>
+
+<p>The wrapper <code>scripts/tools/inspect.sh</code> bundles a "what is going on right now" report — every node, every topic + type, every service, every action, every parameter, plus rate samples for the top topics:</p>
+
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/inspect.sh
+
+── nodes ──
+/joint_animator
+/robot_state_publisher
+/rviz2
+
+── topics + types ──
+/joint_states              sensor_msgs/msg/JointState
+/parameter_events          rcl_interfaces/msg/ParameterEvent
+/robot_description         std_msgs/msg/String
+/rosout                    rcl_interfaces/msg/Log
+/tf                        tf2_msgs/msg/TFMessage
+/tf_static                 tf2_msgs/msg/TFMessage
+…</pre>
+
+<p>Type that whenever you walk into someone else's running system.</p>
+
+<h3>Cheat sheet — the verbs you'll actually use</h3>
+
+<table>
+<thead><tr><th>I want to…</th><th>Type</th></tr></thead>
+<tbody>
+<tr><td>see what nodes are alive</td><td><code>ros2 node list</code></td></tr>
+<tr><td>see all the topics being published</td><td><code>ros2 topic list -t</code></td></tr>
+<tr><td>watch a topic's messages stream by</td><td><code>ros2 topic echo &lt;topic&gt;</code></td></tr>
+<tr><td>check publish rate</td><td><code>ros2 topic hz &lt;topic&gt;</code></td></tr>
+<tr><td>publish a one-off message</td><td><code>ros2 topic pub --once &lt;topic&gt; &lt;type&gt; &lt;yaml&gt;</code></td></tr>
+<tr><td>call a service</td><td><code>ros2 service call &lt;name&gt; &lt;type&gt; &lt;yaml&gt;</code></td></tr>
+<tr><td>send an action goal</td><td><code>ros2 action send_goal &lt;name&gt; &lt;type&gt; &lt;yaml&gt; --feedback</code></td></tr>
+<tr><td>change a node's parameter</td><td><code>ros2 param set &lt;node&gt; &lt;name&gt; &lt;value&gt;</code></td></tr>
+<tr><td>visualize the topic graph</td><td><code>ros2 run rqt_graph rqt_graph</code></td></tr>
+<tr><td>inspect a TF transform</td><td><code>ros2 run tf2_ros tf2_echo &lt;parent&gt; &lt;child&gt;</code></td></tr>
+<tr><td>record everything for replay</td><td><code>ros2 bag record -a -o &lt;name&gt;</code></td></tr>
+<tr><td>replay a bag</td><td><code>ros2 bag play &lt;name&gt;</code></td></tr>
+<tr><td>see why nothing is connecting</td><td><code>ros2 doctor --report</code></td></tr>
+</tbody>
+</table>
+
+<p>That's most of what you do. Print this table, tape it to your monitor.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="sim">
+<header>
+  <div class="crumb">▸ real hardware shape</div>
+  <h2>The real Unitree G1 URDF — visualize the actual robot</h2>
+  <p class="summary">Same launch infrastructure, real meshes, real joint count. Fetch the upstream URDF and watch the actual G1 wave its arms in rviz2.</p>
+</header>
+
+<p>The toy humanoid you brought up earlier is a kinematic stand-in — six joints, primitive shapes. The <strong>real</strong> Unitree G1 has 29 DOF, finely-detailed STL meshes, and link inertias matching the physical robot. The upstream URDF lives in Unitree's <code>unitree_ros</code> repository on GitHub and is the same model that drives the G1 in mujoco_ros, IsaacSim, and the official ROS 2 stack.</p>
+
+<h3>Fetch the assets — opt-in (~150 MB download)</h3>
+
+<pre><span class="pmt">$</span> <span class="fn">bash</span> install/06_fetch_g1_assets.sh
+[06_fetch_g1] fetching G1 URDF + meshes from
+              https://github.com/unitreerobotics/unitree_ros (sparse, depth=1)
+[06_fetch_g1] copying robots/g1_description → ws/src/g1_description
+[06_fetch_g1] vendored: 12 URDF variant(s), 84 mesh file(s)
+
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/ros2_build.sh g1_description
+Finished &lt;&lt;&lt; g1_description [3.42s]</pre>
+
+<p>The fetch script does a sparse, shallow git clone of <code>unitreerobotics/unitree_ros</code>, picks just the <code>robots/g1_description/</code> subtree, and wraps it as a colcon package so <code>robot_state_publisher</code> can find it via <code>package://g1_description/...</code> URIs.</p>
+
+<h3>Bring up the real G1 in rviz2</h3>
+
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh g1
+<span class="com"># rviz opens — the actual G1: pelvis, legs, arms, head.</span>
+<span class="com"># wave pattern animates the shoulders + elbows + hips.</span></pre>
+
+<p>The launch file (<code>g1_sim.launch.py</code>) does the same three things as the toy launch — load URDF into <code>robot_state_publisher</code>, run the animator, open rviz2 — but with the real model. Variants:</p>
+
+<pre><span class="pmt">$</span> <span class="com"># pick a different URDF flavor:</span>
+<span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py urdf:=g1_29dof_lock_waist.urdf
+
+<span class="pmt">$</span> <span class="com"># headless (CI / no display):</span>
+<span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py rviz:=false
+
+<span class="pmt">$</span> <span class="com"># walk pattern on the real model:</span>
+<span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py pattern:=walk</pre>
+
+<h3>Inspect the full kinematic tree</h3>
+
+<pre><span class="pmt">$</span> <span class="com"># the G1's root frame is `pelvis`, not `base_link`</span>
+<span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis left_wrist_yaw_link
+<span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis right_ankle_roll_link
+
+<span class="pmt">$</span> <span class="com"># dump the whole tree as a PDF:</span>
+<span class="pmt">$</span> ros2 run tf2_tools view_frames
+<span class="com"># 41 links, 40 joints. The PDF lands in the current dir.</span></pre>
+
+<h3>Plot a real joint angle as the wave animation runs</h3>
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_plot.sh /joint_states/position[0]
+<span class="com"># live strip chart — left_shoulder_pitch_joint sine wave at 0.33 Hz</span></pre>
+
+<h3>Bag the wave + replay it without the animator</h3>
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/bag_record.sh /joint_states /tf /tf_static
+<span class="com"># Ctrl+C after 10 seconds — bags/session_&lt;ts&gt;/ written</span>
+
+<span class="pmt">$</span> <span class="com"># stop the sim, then replay the bag back into a fresh sim:</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/bag_play.sh
+<span class="pmt">$</span> ros2 topic hz /joint_states
+average rate: 30.000      <span class="com"># publisher is now ros2 bag, not the animator</span></pre>
+
+<h3>One step further — Gazebo Sim physics</h3>
+
+<p>The env also ships <strong>Gazebo Sim</strong> (modern <code>gz</code>, formerly Ignition). It's a full physics simulator with gravity, contacts, and collisions:</p>
+<pre><span class="pmt">$</span> gz sim shapes.sdf      <span class="com"># canonical demo world</span></pre>
+<p>Driving the G1 URDF in Gazebo needs two extra pieces: a <code>&lt;gazebo&gt;</code> block in the URDF declaring contact + inertia, and the <code>ros_gz_bridge</code> package to translate gz topics ↔ ROS 2 topics. Out of scope for this tutorial, but the URDF you just installed is the same one Unitree distributes for mujoco_ros — it's the right starting point. See <a href="#further">"What to build next"</a>.</p>
+
+<div class="callout ok">
+<strong>What you have at this point</strong>
+You can stand up the actual G1 in 3D, query its real kinematics from the CLI, change its behavior at runtime via a parameter, record a session, and replay it. The model is identical to what runs on the hardware. Lessons 07–09 use the same robot model — only the source of <code>/joint_states</code> changes (animator → DDS bridge → real motor encoders).
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L07">
+<header>
+  <div class="crumb">lesson 07</div>
+  <h2>The G1 bridge — DDS ↔ ROS 2, with a safety latch in the middle</h2>
+  <p class="summary">Two protocol stacks meet in one process. The bridge is the <em>only</em> place safety is enforced.</p>
+</header>
+
+<p>The Unitree G1 publishes its low-level state on the DDS topic <code>rt/lowstate</code> (type <code>unitree_hg.msg.LowState_</code>) and accepts commands on <code>rt/lowcmd</code>. The bridge translates each direction and gates the command path on <code>/g1/safety_engaged</code>.</p>
+
+<p>The shape of the bridge:</p>
+
+<pre><span class="kw">class</span> <span class="fn">G1Bridge</span>(Node):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        <span class="kw">super</span>().__init__(<span class="str">"g1_bridge"</span>)
+        self._safety_engaged = <span class="kw">False</span>
+
+        self._state_pub = self.create_publisher(LowState,  <span class="str">"/g1/lowstate"</span>, qos_profile_sensor_data)
+        self._imu_pub   = self.create_publisher(Imu,       <span class="str">"/g1/imu"</span>,      qos_profile_sensor_data)
+        self.create_subscription(LowCmd, <span class="str">"/g1/lowcmd"</span>,    self._on_cmd,    qos_profile_sensor_data)
+        self.create_subscription(Bool,   <span class="str">"/g1/safety_engaged"</span>, self._on_safety, LATCHED_QOS)
+
+        self._sdk = G1Sdk(iface=iface)
+        self._sdk.on_state(self._on_sdk_state)   <span class="com"># republish DDS → ROS</span>
+        self._sdk.connect()
+
+    <span class="kw">def</span> <span class="fn">_on_cmd</span>(self, msg):
+        <span class="com"># **Structural** safety gate. Move this and you have a bug.</span>
+        <span class="kw">if not</span> self._safety_engaged:
+            self.get_logger().warn(<span class="str">"dropped /g1/lowcmd — safety disengaged"</span>)
+            <span class="kw">return</span>
+        self._sdk.publish_cmd(_to_sdk(msg))</pre>
+
+<p>Run it without a robot &mdash; the bridge has a built-in fake state emitter:</p>
+
+<pre><span class="pmt">$</span> G1_BRIDGE_FAKE=1 ros2 run g1_bridge bridge
+[INFO] bridge up [FAKE] iface=&lt;auto&gt; — safety DISENGAGED
+
+<span class="pmt">$</span> <span class="com"># second shell:</span>
+<span class="pmt">$</span> ros2 run g1_bridge safety
+[INFO] safety latch up (default: DISENGAGED)
+<span class="pmt">$</span> ros2 topic hz /g1/imu
+average rate: 50.000</pre>
+
+<p>Engage safety and watch the bridge stop dropping commands (in fake mode it has no real <code>rt/lowcmd</code> to forward, but it logs the change):</p>
+
+<pre><span class="pmt">$</span> ros2 service call /g1/safety/engage std_srvs/srv/Trigger
+<span class="com"># bridge log:</span>
+[WARN] safety latch → ENGAGED</pre>
+
+<div class="callout warn">
+<strong>Two-layer safety, not one</strong>
+The bridge's safety check is one layer. The <a href="#L09">controller</a> in lesson 09 checks the same latch <em>before publishing</em>. A bug in the controller can't reach the SDK unless both checks fail. Refactors that "simplify" the two into one are regressions.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L08">
+<header>
+  <div class="crumb">lesson 08</div>
+  <h2>Voice I/O — VAD-gated mic in, offline TTS out</h2>
+  <p class="summary">Privacy by default. The G1 doesn't stream all audio to the network — only utterances.</p>
+</header>
+
+<p>Always-on audio is a privacy footgun and a bandwidth waste. The right shape is <strong>voice-activity-detected capture</strong>: a small model decides "this looks like speech," and only then does an utterance get published.</p>
+
+<p>The listener uses <strong>Silero VAD</strong> (an ONNX model that runs on CPU at real-time) and publishes a base64-encoded WAV on <code>/g1/speech/utter</code> per detected utterance:</p>
+
+<pre><span class="pmt">$</span> ros2 run g1_speech listen
+[INFO] listening (VAD-gated)
+<span class="com"># speak into the mic …</span>
+[INFO] emit utterance (24320 bytes pcm)</pre>
+
+<p>The flow downstream of this is your choice &mdash; ASR, intent extraction, controller dispatch. We don't bake an ASR into the tutorial because the right one (Whisper? Vosk? cloud?) is a project-specific call.</p>
+
+<p>For voice out we use <strong>Piper</strong> &mdash; offline TTS, runs on CPU faster than real-time, ships its own voice models. Exposed as a service:</p>
+
+<pre><span class="pmt">$</span> ros2 run g1_speech speak
+[INFO] speaker up (backend=piper)
+<span class="pmt">$</span> ros2 service call /g1/speech/say std_srvs/srv/Trigger
+[INFO] saying: <span class="str">'Hello. I am the G1. How can I help?'</span>
+<span class="com"># audio plays through the default output device</span></pre>
+
+<p>If <code>piper-tts</code> isn't installed (the tutorial's install layer makes it optional), the node falls back to a WAV stub at <code>/tmp/g1_speak_*.wav</code> and logs the path &mdash; useful for headless smoke testing.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="L09">
+<header>
+  <div class="crumb">lesson 09</div>
+  <h2>High-level control — everything composes</h2>
+  <p class="summary">A lifecycle node that exposes a service-based <code>/g1/set_mode</code>, gated by safety, talking to the bridge.</p>
+</header>
+
+<p>The controller is the capstone. Every lesson before this contributes:</p>
+
+<table>
+  <thead><tr><th>Pattern</th><th>From lesson</th><th>Used here as</th></tr></thead>
+  <tbody>
+    <tr><td>Managed lifecycle</td><td>05</td><td>refuses to publish before <code>activate</code></td></tr>
+    <tr><td>Services</td><td>03</td><td><code>/g1/set_mode</code> for posture switches</td></tr>
+    <tr><td>Actions</td><td>04</td><td>(in a richer build) <code>walk_to_pose</code></td></tr>
+    <tr><td>Pub/sub QoS</td><td>02</td><td><code>/g1/lowstate</code> sub, <code>/g1/lowcmd</code> pub</td></tr>
+    <tr><td>Safety latch</td><td>07</td><td>structural check before every publish</td></tr>
+  </tbody>
+</table>
+
+<p>The set-mode handler shows the composition explicitly:</p>
+
+<pre><span class="kw">def</span> <span class="fn">_on_set_mode</span>(self, req, resp):
+    <span class="kw">if not</span> self._safety_engaged:
+        resp.success = <span class="kw">False</span>
+        resp.message = <span class="str">"refused: safety_engaged=False"</span>
+        <span class="kw">return</span> resp                <span class="com"># layer 1: controller-side gate</span>
+
+    <span class="kw">if</span> self._cmd_pub <span class="kw">is None</span>:
+        resp.success = <span class="kw">False</span>
+        resp.message = <span class="str">"refused: controller not active"</span>
+        <span class="kw">return</span> resp                <span class="com"># layer 2: lifecycle gate</span>
+
+    cmd = LowCmd()
+    cmd.motor_cmd = [_damping_motor() <span class="kw">for</span> _ <span class="kw">in</span> <span class="kw">range</span>(<span class="num">29</span>)]
+    self._cmd_pub.publish(cmd)        <span class="com"># bridge enforces layer 3</span>
+    resp.success = <span class="kw">True</span>
+    <span class="kw">return</span> resp</pre>
+
+<p>Bring everything up:</p>
+
+<pre><span class="pmt">$</span> G1_BRIDGE_FAKE=1 ros2 run g1_bridge bridge      <span class="com"># shell A</span>
+<span class="pmt">$</span> ros2 run g1_bridge safety                      <span class="com"># shell B</span>
+<span class="pmt">$</span> ros2 run g1_controller demo                    <span class="com"># shell C</span>
+<span class="pmt">$</span> <span class="com"># in shell D:</span>
+<span class="pmt">$</span> ros2 lifecycle set /g1_controller configure
+<span class="pmt">$</span> ros2 lifecycle set /g1_controller activate
+<span class="pmt">$</span> ros2 service call /g1/safety/engage std_srvs/srv/Trigger
+<span class="pmt">$</span> ros2 run g1_controller wave_client
+[INFO] engaging safety …
+[INFO] requesting WAVE_HAND …
+[INFO] set_mode OK: published damping command toward WAVE_HAND</pre>
+
+<div class="callout ok">
+<strong>What you have now</strong>
+A four-node system (bridge, safety, controller, client) where motion commands flow through three independent gates &mdash; controller activation, safety engagement, bridge forwarding &mdash; and any one of them dropping the command is enough to keep the robot still. That's the production shape; the lesson code is the minimal version.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="further">
+<header>
+  <div class="crumb">what's next</div>
+  <h2>What to build next</h2>
+  <p class="summary">Ten small projects that turn this scaffold into something useful.</p>
+</header>
+
+<p>The tutorial stops where production work begins. If you want to keep going:</p>
+
+<ol>
+  <li><strong>Real walk-to-pose action.</strong> <code>humanoid_msgs/WalkToPose.action</code> is defined; wire <code>g1_controller</code> to send the SDK's high-level sport-mode request and stream <code>SportModeState_</code> back as feedback.</li>
+  <li><strong>Gain ramping.</strong> The lesson sends one damping command. A real controller ramps <code>kp</code> and <code>kd</code> with a smoothstep over ~200 ms so the robot doesn't snap to position.</li>
+  <li><strong>Watchdog.</strong> Auto-abort active control if <code>/g1/lowstate</code> goes stale (e.g., &gt; 100 ms). The G1 falls if you stop publishing <code>lowcmd</code> in active mode.</li>
+  <li><strong>ASR wiring.</strong> Drop Whisper (or Vosk) between <code>/g1/speech/utter</code> and a new <code>/g1/speech/intent</code> topic. Map intents → controller calls.</li>
+  <li><strong>rviz panel.</strong> Visualize the robot's URDF moving in real time, driven by <code>/g1/lowstate</code> and <code>robot_state_publisher</code>.</li>
+  <li><strong>CRC validation.</strong> <code>LowState_</code> carries a CRC; the bridge currently ignores it. Reject states with a bad CRC and surface a warning.</li>
+  <li><strong>Mode-machine cross-check.</strong> The G1's onboard controller refuses some commands depending on <code>mode_machine</code>; have the bridge predicate publish on it.</li>
+  <li><strong>Live URDF for inverse kinematics.</strong> Use <code>tf2</code> + a chest-mounted camera to solve "look at the speaker" as an IK problem over the head yaw + pitch joints.</li>
+  <li><strong>Battery alerts.</strong> Publish <code>sensor_msgs/BatteryState</code> from <code>lowstate.power_v</code>/<code>power_a</code>, and a service that returns "is it safe to take a 5-minute walk?"</li>
+  <li><strong>Telemetry stream.</strong> Replace the CLI <code>ros2 topic echo</code> with a tiny WebSocket dashboard reading <code>/g1/lowstate</code> over rosbridge.</li>
+</ol>
+
+<p>Each of those is one or two evenings of work. None of them changes the safety contract.</p>
+</section>
+
+<footer>
+  <p>Built on Debian 13 (trixie) WSL2 · ROS 2 (Jazzy / Humble via RoboStack) · Unitree G1 + unitree_sdk2py · CycloneDDS · MIT license for the tutorial body.</p>
+  <p>Read the source under <code>ws/src/</code>; report issues at the repo's issue tracker; do not bypass the safety latch.</p>
+</footer>
+
+</main>
+
+<script type="application/json" id="reference-index">
+[{"url":"architecture.md#architecture","doc":"architecture.md","doc_title":"Architecture","heading":"Architecture","text":"The tutorial is a single colcon workspace with three concentric rings. ┌─────────────────────────────────────────────────────────────────┐ │ Ring 3: humanoid integration │ │ ┌───────────────┐ ┌──────────────┐ ┌──────────────────┐ │ │ │ g1_bridge │ │ g1_speech │ │ g1_controller │ │ │ │ DDS ↔ ROS 2 │ │ VAD + TTS │ │ sit/stand/wave │ │ │ └───────┬───────┘ └──────┬───────┘ └──────┬───────────┘ │ │ │ │ │ │ │ └─────────┬────────┴─────────────────┘ │ │ ▼ │ │ ┌─────────────┐ │ │ │humanoid_msgs│ (custom .msg / .srv / .action) │ │ └─────────────┘ │ ├──────────────────────────────────────────────────────"},{"url":"architecture.md#why-this-shape","doc":"architecture.md","doc_title":"Architecture","heading":"Why this shape","text":"- **Ring 2 lessons are pedagogical first, useful second.** Each one is a complete colcon package that builds in isolation. Readers diff lesson 03 and lesson 04 to internalize \"service vs. action.\" - **Ring 3 packages depend on lower rings, but no further.** `g1_controller` uses lifecycle (lesson 05) and actions (lesson 04) patterns directly. It composes them; it doesn't re-explain them. - **`humanoid_msgs` is a separate package** because custom ROS message types must be generated by `rosidl_default_generators`, which only works in `ament_cmake`. The rest of the workspace is `ament_python` for "},{"url":"architecture.md#topic--service--action-contract","doc":"architecture.md","doc_title":"Architecture","heading":"Topic / service / action contract","text":"The contract `g1_bridge` exposes — what nodes downstream can rely on: | Direction | Name | Type | QoS | |---|---|---|---| | from robot | `/g1/lowstate` | `humanoid_msgs/LowState` | `sensor_data` | | from robot | `/g1/imu` | `sensor_msgs/Imu` | `sensor_data` | | to robot | `/g1/lowcmd` | `humanoid_msgs/LowCmd` | `sensor_data` | | controller | `/g1/set_mode` | `humanoid_msgs/srv/SetMode` | reliable | | safety | `/g1/safety_engaged` | `std_msgs/Bool` | reliable + transient_local | | safety | `/g1/safety/engage` | `std_srvs/srv/Trigger` | reliable | | safety | `/g1/safety/release` | `std_srvs/srv/"},{"url":"architecture.md#safety-architecture","doc":"architecture.md","doc_title":"Architecture","heading":"Safety architecture","text":"The safety latch is **structural**. Two layers enforce it: 1. The publisher in `g1_controller.demo` checks `self._safety_engaged` before publishing `/g1/lowcmd`. This is the *application* layer. 2. The forwarder in `g1_bridge.bridge` checks the same latch before forwarding `/g1/lowcmd` to the SDK's `rt/lowcmd`. This is the *boundary* layer. A bug in the controller cannot reach the robot through the bridge unless the latch is engaged. A bug in the bridge can't be reached without a controller. Both must be wrong simultaneously, and the operator must have engaged the latch. Refactors that move th"},{"url":"architecture.md#why-micromambarobostack-instead-of-apt","doc":"architecture.md","doc_title":"Architecture","heading":"Why micromamba/RoboStack instead of apt","text":"Debian 13 (trixie) has no official ROS 2 apt repository. The two realistic options on this host are: - **RoboStack (conda-forge):** ROS 2 binaries built on conda-forge, ship to any Linux/macOS/Windows. Same `ros2` CLI, same `rclpy`, same colcon. Works natively in WSL2 without container tricks. - **Docker (`osrf/ros:*`):** clean isolation, but rviz GUI needs X setup, volume-mount paths get awkward, and you double the GPU passthrough complexity. We use RoboStack, **reusing** the existing `~/micromamba/envs/ros2_jazzy` that the developer machine already has installed for the Master Control Agent "},{"url":"architecture.md#memory-of-decisions","doc":"architecture.md","doc_title":"Architecture","heading":"Memory of decisions","text":"- `humanoid_msgs/LowState.motor_state` is an unbounded array. Bounded sequence (`MotorState[29]`) would be more precise but forces every consumer to know the joint count; we chose the flexibility. - `g1_bridge` lazy-imports the SDK and supports `G1_BRIDGE_FAKE=1` so tests run anywhere. The fake state emitter mimics the real state's field shape exactly. - The wave demo is built around a one-shot service call rather than an action because the lesson is \"use the controller\" — the *action* shape was already taught in lesson 04, no point re-teaching it."},{"url":"testing.md#testing-—-deploy-and-verify-the-whole-tutorial","doc":"testing.md","doc_title":"Testing","heading":"Testing — deploy and verify the whole tutorial","text":"This page is the recipe for going from a fresh checkout to a fully verified, runnable tutorial. Designed for **Debian 13 (trixie) WSL2 + NVIDIA discrete**, but works on any Linux + Python 3.11/3.12 host."},{"url":"testing.md#tl;dr-—-one-command-to-test-everything","doc":"testing.md","doc_title":"Testing","heading":"TL;DR — one command to test everything","text":"bash tests/integration/full_e2e.sh Runs: install discovery → colcon build → pytest → every lesson briefly → sim humanoid launch → G1 bridge in fake mode → safety latch propagation → rosbag record + replay → GUI tool sanity. ~3 minutes, all headless, no human in the loop. If you also want the real Unitree G1 URDF (~150 MB download from GitHub) verified end-to-end: bash tests/integration/full_e2e.sh --fetch-g1 Exit code 0 = everything works. Non-zero = something is wrong; the script lists exactly which checks failed and where the per-step logs live (`/tmp/e2e_*.log`). ---"},{"url":"testing.md#what-gets-tested,-and-why","doc":"testing.md","doc_title":"Testing","heading":"What gets tested, and why","text":""},{"url":"testing.md#phase-1-—-install-discovery-(~10-s)","doc":"testing.md","doc_title":"Testing","heading":"Phase 1 — install discovery (~10 s)","text":"Runs `install/01_micromamba.sh` → `05_verify.sh` in order. **None of these download multi-GB packages on a healthy host** — they detect the existing micromamba + ROS 2 env and skip. The pip layer adds ~150 MB of audio extras only if missing. This phase catches: stale `install/.discovered.sh`, missing rclpy, broken `ros2` CLI, missing audio packages, missing `unitree_sdk2py`, missing CycloneDDS profile."},{"url":"testing.md#phase-1b-—-g1-asset-fetch-(opt-in,-~150-mb)","doc":"testing.md","doc_title":"Testing","heading":"Phase 1b — G1 asset fetch (opt-in, ~150 MB)","text":"Only runs when you pass `--fetch-g1` or when `ws/src/g1_description/` already exists. Sparse-clones [`unitreerobotics/unitree_ros`](https://github.com/unitreerobotics/unitree_ros) on master, picks just the `robots/g1_description/` subtree, wraps it as a colcon package. Idempotent."},{"url":"testing.md#phase-2-—-colcon-build-(~10-s-incremental,-~60-s-clean)","doc":"testing.md","doc_title":"Testing","heading":"Phase 2 — colcon build (~10 s incremental, ~60 s clean)","text":"Builds every package in the workspace via `bash scripts/ros2_build.sh` (which passes the Python + NumPy CMake hints needed by RoboStack Jazzy's CMake 4.2). Catches: missing `package.xml` / `setup.py` fields, type errors caught by ament's Python build, broken xacro, missing C++ deps, msg/srv/action generation failures."},{"url":"testing.md#phase-3-—-pytest-(~3-s)","doc":"testing.md","doc_title":"Testing","heading":"Phase 3 — pytest (~3 s)","text":"Runs `tests/test_imports.py` + `tests/test_lessons.py`. ~32 tests: every package imports without a robot connected, every lesson's main node starts and shuts down cleanly, the bridge in fake mode emits state, the lifecycle node transitions, the safety latch defaults to disengaged, the sim animator publishes the right joint names."},{"url":"testing.md#phase-4-—-every-lesson-runs-(~25-s)","doc":"testing.md","doc_title":"Testing","heading":"Phase 4 — every lesson runs (~25 s)","text":"Brings each lesson's primary entry point up under a 4-second timeout, then verifies the expected topic appears on the graph within 8 seconds. Skipped under `--quick`. | Lesson | Expected topic | |---|---| | 01 `tutorial_basics` | `/rosout` | | 02 `tutorial_pubsub talker` | `/joint_state` | | 02 `tutorial_pubsub listener` | (just doesn't crash) | | 03 `tutorial_services server` | `/rosout` | | 04 `tutorial_actions server` | (just doesn't crash) | | 05 `tutorial_lifecycle` | (just doesn't crash) | | 06 `tutorial_tf static_publisher` | `/tf_static` | | 06 `tutorial_tf head_tracker` | `/tf` |"},{"url":"testing.md#phase-5-—-sim-humanoid-launches-(~10-s)","doc":"testing.md","doc_title":"Testing","heading":"Phase 5 — sim humanoid launches (~10 s)","text":"`ros2 launch tutorial_sim sim.launch.py rviz:=false` brings up: `robot_state_publisher` + `joint_animator` + (rviz omitted in test mode). Verifies `/joint_states` streams, then exercises `ros2 param get/set` to swap the animation pattern from `wave` to `walk`. If the G1 URDF is built, repeats with `g1_sim.launch.py`."},{"url":"testing.md#phase-6-—-g1-bridge-in-fake-mode-(~5-s)","doc":"testing.md","doc_title":"Testing","heading":"Phase 6 — G1 bridge in fake mode (~5 s)","text":"Brings up `g1_bridge` (with `G1_BRIDGE_FAKE=1`) + `safety_latch`. Verifies all four expected topics appear (`/g1/imu`, `/g1/lowstate`, `/g1/lowcmd`, `/g1/safety_engaged`), then calls `/g1/safety/engage` and verifies the bridge logs the latch transition (proves the latch propagates structurally)."},{"url":"testing.md#phase-7-—-rosbag-record-+-replay-(~10-s)","doc":"testing.md","doc_title":"Testing","heading":"Phase 7 — rosbag record + replay (~10 s)","text":"Brings up the sim, records 3 seconds of `/joint_states` + `/tf`, verifies `metadata.yaml` + non-zero message count, kills the producer, replays the bag, verifies the topic re-appears. Catches rosbag2 storage plugin issues (mcap needs the `rosbag2_storage_mcap` plugin in the env)."},{"url":"testing.md#phase-8-—-gui-tools-sanity-(~2-s)","doc":"testing.md","doc_title":"Testing","heading":"Phase 8 — GUI tools sanity (~2 s)","text":"Verifies `rviz2`, `rqt_graph`, `rqt_plot`, `tf2_echo`, and `gz` binaries are available. Doesn't try to open a window (would hang headless). If you're on a real desktop or WSLg, manually verify the GUI side with `bash scripts/tools/sim_up.sh`. ---"},{"url":"testing.md#running-by-hand","doc":"testing.md","doc_title":"Testing","heading":"Running by hand","text":"If something fails, isolate it. Each script is independent: bash"},{"url":"testing.md#install-plumbing-only","doc":"testing.md","doc_title":"Testing","heading":"install plumbing only","text":"bash install/install.sh"},{"url":"testing.md#build-only","doc":"testing.md","doc_title":"Testing","heading":"build only","text":"bash scripts/ros2_build.sh # whole workspace bash scripts/ros2_build.sh humanoid_msgs # one package"},{"url":"testing.md#unit-tests-only","doc":"testing.md","doc_title":"Testing","heading":"unit tests only","text":"source scripts/ros2_env.sh pytest tests/test_imports.py tests/test_lessons.py -v"},{"url":"testing.md#diagnostic-dump-(env,-gpu,-network)","doc":"testing.md","doc_title":"Testing","heading":"diagnostic dump (env, GPU, network)","text":"bash scripts/doctor.sh For the GUI half — what the e2e can't verify because it's headless — walk this list manually after the e2e is green: source scripts/ros2_env.sh"},{"url":"testing.md#1.-toy-humanoid-in-rviz","doc":"testing.md","doc_title":"Testing","heading":"1. Toy humanoid in rviz","text":"bash scripts/tools/sim_up.sh"},{"url":"testing.md#should-see:-rviz2-window-with-orange-and-blue-humanoid-waving","doc":"testing.md","doc_title":"Testing","heading":"should see: rviz2 window with orange-and-blue humanoid waving","text":""},{"url":"testing.md#2.-real-unitree-g1-in-rviz-(after-fetch)","doc":"testing.md","doc_title":"Testing","heading":"2. Real Unitree G1 in rviz (after fetch)","text":"bash install/06_fetch_g1_assets.sh bash scripts/ros2_build.sh g1_description bash scripts/tools/sim_up.sh g1"},{"url":"testing.md#should-see:-rviz2-window-with-the-actual-g1-model,-arms-moving","doc":"testing.md","doc_title":"Testing","heading":"should see: rviz2 window with the actual G1 model, arms moving","text":""},{"url":"testing.md#3.-the-live-topic-graph","doc":"testing.md","doc_title":"Testing","heading":"3. The live topic graph","text":"bash scripts/tools/rqt_graph.sh"},{"url":"testing.md#should-see:-rqt-window,-nodes-and-edges-diagram","doc":"testing.md","doc_title":"Testing","heading":"should see: rqt window, nodes-and-edges diagram","text":""},{"url":"testing.md#4.-live-numeric-plot","doc":"testing.md","doc_title":"Testing","heading":"4. Live numeric plot","text":"bash scripts/tools/rqt_plot.sh /joint_states/position[0]"},{"url":"testing.md#should-see:-scrolling-sine-wave","doc":"testing.md","doc_title":"Testing","heading":"should see: scrolling sine wave","text":""},{"url":"testing.md#5.-snapshot-the-live-system","doc":"testing.md","doc_title":"Testing","heading":"5. Snapshot the live system","text":"bash scripts/tools/inspect.sh"},{"url":"testing.md#should-see:-tabular-output-of-every-nodetopicserviceparamrate","doc":"testing.md","doc_title":"Testing","heading":"should see: tabular output of every node/topic/service/param/rate","text":" ---"},{"url":"testing.md#ci-—-running-this-in-github-actions","doc":"testing.md","doc_title":"Testing","heading":"CI — running this in GitHub Actions","text":"The e2e is designed to run inside a CI runner. Skeleton: yaml"},{"url":"testing.md#.githubworkflowstest.yml","doc":"testing.md","doc_title":"Testing","heading":".github/workflows/test.yml","text":"name: e2e on: [push, pull_request] jobs: e2e: runs-on: ubuntu-latest container: ubuntu:22.04 steps: - uses: actions/checkout@v4 - run: | apt-get update && apt-get install -y curl bzip2 git build-essential bash install/00_prereqs.sh TUTORIAL_INSTALL_ROS=1 bash install/install.sh - run: bash tests/integration/full_e2e.sh --skip-fetch --quick # The headless full_e2e covers everything except GUI rendering. In CI you'd typically pass `--quick` (skip the longer per-lesson timeout block) and `--skip-fetch` (don't pull 150 MB on every PR). For nightlies, drop `--quick` and add `--fetch-g1`. ---"},{"url":"testing.md#when-the-e2e-fails","doc":"testing.md","doc_title":"Testing","heading":"When the e2e fails","text":"The script halts at the first build failure (because nothing else will work) and continues past unit-test / integration failures (because they're independent). Look at: 1. The summary at the bottom — lists every failed check by name. 2. `/tmp/e2e_<step>.log` — full stdout/stderr of the failing step. 3. The \"last 25 lines\" preview the script prints inline. Common patterns: | Symptom | Likely cause | Fix | |---|---|---| | `colcon build` fails | Setuptools >= 80 dropped `develop --editable`, or CMake can't find Python | Use `bash scripts/ros2_build.sh` (passes the right hints) | | `pytest` hangs "},{"url":"testing.md#coverage-summary","doc":"testing.md","doc_title":"Testing","heading":"Coverage summary","text":"- **Install path** — every script under `install/`. - **Build path** — every package under `ws/src/`. - **Code path** — every package's main entry point + every test in `tests/`. - **Topic graph** — every expected topic on the bridge + sim + lessons. - **Service graph** — at least one service call on the bridge (`/g1/safety/engage`). - **Parameter API** — `ros2 param get/set` on `/joint_animator pattern`. - **Lifecycle API** — node transitions through configure → activate → deactivate. - **Action API** — server starts cleanly under timeout (smoke). - **rosbag2** — record + info + replay round-"},{"url":"wsl_nvidia.md#wsl2-+-nvidia-discrete-gpu","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"WSL2 + NVIDIA discrete GPU","text":"Notes on getting a Debian 13 (trixie) WSL2 distro to talk to an NVIDIA RTX 4090 without lighting your install on fire."},{"url":"wsl_nvidia.md#the-mental-model","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"The mental model","text":"WSL2 is a real Linux kernel running on top of Hyper-V's lightweight hypervisor. NVIDIA support in WSL works by: 1. The **Windows-side NVIDIA driver** installs a \"WSL paravirtual GPU\" shim. 2. The Windows side exposes the GPU to Linux as `/dev/dxg`. 3. The Linux side ships a tiny user-space stub (`libcuda.so`, `libnvidia-ml.so`) under `/usr/lib/wsl/lib/` that talks to the shim. You do **not** install Linux NVIDIA drivers inside WSL. Doing so overwrites the stub libs and breaks GPU access until you reinstall."},{"url":"wsl_nvidia.md#the-five-checks","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"The five checks","text":"bash"},{"url":"wsl_nvidia.md#1.-is-this-actually-wsl?","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"1. Is this actually WSL?","text":"grep -i microsoft /proc/version"},{"url":"wsl_nvidia.md#2.-is-the-wsl-kernel-recent-enough-to-ship-the-gpu-device?","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"2. Is the WSL kernel recent enough to ship the GPU device?","text":"ls -l /dev/dxg"},{"url":"wsl_nvidia.md#3.-did-the-windows-side-driver-register-itself-with-wsl?","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"3. Did the Windows-side driver register itself with WSL?","text":"ls -l /usr/lib/wsl/lib/libcuda.so"},{"url":"wsl_nvidia.md#4.-does-the-user-space-cuda-stub-work?","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"4. Does the user-space CUDA stub work?","text":"nvidia-smi"},{"url":"wsl_nvidia.md#5.-is-the-gpu-actually-a-discrete-one-(not-the-integrated)?","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"5. Is the GPU actually a discrete one (not the integrated)?","text":"nvidia-smi -L If checks 1, 2, 3 fail in that order, fix the prior one first."},{"url":"wsl_nvidia.md#common-state-on-this-host","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"Common state on this host","text":"/dev/dxg (kernel passthrough device) /usr/lib/wsl/lib/libcuda.so → libcuda.so.1.1 (CUDA runtime) /usr/lib/wsl/lib/libnvidia-ml.so → libnvidia-ml.so.1 (NVML, used by nvidia-smi) /usr/lib/wsl/drivers/... (kernel-mode drivers) These live on a Microsoft-managed mount. Don't try to update them with `apt`. The way to update them is to update the Windows-side NVIDIA driver and run `wsl --update` from PowerShell."},{"url":"wsl_nvidia.md#when-`nvidia-smi`-returns-no-devices","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"When `nvidia-smi` returns no devices","text":"In rough order of likelihood: 1. **Windows driver below 535.** Update from <https://www.nvidia.com/Download/index.aspx> (Game Ready or Studio, doesn't matter for compute). 2. **WSL kernel too old.** From PowerShell: wsl --update wsl --shutdown 3. **You installed Linux NVIDIA drivers inside WSL.** Recover: sudo apt-get purge 'nvidia-*' 'libnvidia-*' # then `wsl --shutdown` from Windows so the stub libs re-bind 4. **`.wslconfig` GPU acceleration disabled.** Check `~/.wslconfig` on the Windows host for `gpu=false`."},{"url":"wsl_nvidia.md#cuda-inside-the-env","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"CUDA inside the env","text":"If a lesson wants CUDA (the optional `onnxruntime-gpu` path): bash"},{"url":"wsl_nvidia.md#inside-the-activated-ros-2-env","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"inside the activated ROS 2 env","text":"python -c \"import onnxruntime as ort; print(ort.get_device(), ort.get_available_providers())\" You want to see `GPU` and `CUDAExecutionProvider`. If not, `pip install --force-reinstall onnxruntime-gpu` after uninstalling the CPU build: pip uninstall -y onnxruntime pip install onnxruntime-gpu This is opt-in — the tutorial's default `onnxruntime` (CPU) is fine for the VAD model at 16 kHz mono."},{"url":"wsl_nvidia.md#rviz2-doesn't-render","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"rviz2 doesn't render","text":"Two layers can break here: - **WSLg not running.** Test with `xeyes` or `glxgears`. If those don't open, `wsl --shutdown` and reopen the shell. - **Mesa software fallback in use.** `glxinfo | grep \"OpenGL renderer\"` — if it says `llvmpipe`, the GPU isn't being used. That can still work for rviz at low frame rate; if you care about performance, see check 4 above."},{"url":"wsl_nvidia.md#network:-discrete-card-and-the-robot-are-unrelated","doc":"wsl_nvidia.md","doc_title":"Wsl Nvidia","heading":"Network: discrete card and the robot are unrelated","text":"The 4090 is for compute. Connecting to the G1 over a real network is a separate problem covered in [unitree_g1.md](unitree_g1.md). The two intersect only if you decide to run a heavy perception pipeline on the GPU and stream results to the robot — out of scope for the tutorial as-is."},{"url":"unitree_g1.md#connecting-to-a-unitree-g1","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"Connecting to a Unitree G1","text":"How the G1 looks from a developer's terminal, the safety contract, and the network plumbing you need before lesson 07 will see the robot."},{"url":"unitree_g1.md#what-the-g1-exposes","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"What the G1 exposes","text":"The G1 runs an onboard controller that publishes / subscribes to a small set of DDS topics over CycloneDDS on the wired ethernet interface. The two that matter most for the tutorial: | DDS topic | IDL type | Direction | Rate | |---|---|---|---| | `rt/lowstate` | `unitree_hg.msg.LowState_` | from robot | ~500 Hz | | `rt/lowcmd` | `unitree_hg.msg.LowCmd_` | to robot | up to 500 Hz | | `rt/sportmode/state` | `unitree_hg.msg.SportModeState_` | from robot | 50 Hz | | `rt/api/sport/request` | `unitree_api.msg.Request_` | to robot | on demand | `LowState_` carries 29 motor states (legs + arms + waist"},{"url":"unitree_g1.md#network-topology","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"Network topology","text":"Out of the box, the G1's wired ethernet expects to be on **192.168.123.0/24**. The robot is typically `192.168.123.161` (the high-level board) and `192.168.123.99` (the low-level board), but the IDs vary by firmware revision — confirm with `ros2 service call /rt/sportmode/get_status` once you're connected. Your host needs a NIC with a static IP on that subnet. On WSL2 this means **mirrored networking** is required: ini"},{"url":"unitree_g1.md#~.wslconfig-on-the-windows-host","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"~/.wslconfig on the Windows host","text":"[wsl2] networkingMode=mirrored `wsl --shutdown` from PowerShell, reopen the shell, and verify with `ip -br addr` — you should now see the same interfaces as `ipconfig` shows on Windows. Then tell CycloneDDS which interface to use: <NetworkInterface autodetermine=\"false\" name=\"eth0\" priority=\"default\" multicast=\"default\" /> …in `install/cyclonedds.xml`. Replace `eth0` with the actual name from `ip -br addr` (often `eth0` or `Ethernet`). Finally: export CYCLONEDDS_URI=file://$REPO/install/cyclonedds.xml "},{"url":"unitree_g1.md#bring-up-checklist","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"Bring-up checklist","text":"In order, before any motion lesson: 1. **Hoist the robot or enable damping mode.** The G1 does not self-balance until `STAND` mode is requested *and* the controller has converged. If you skip this, it falls. 2. **Confirm the wired ethernet link.** `ip -br addr` shows the 192.168.123.x interface; `ping 192.168.123.161` returns replies. 3. **Set the CycloneDDS URI** as above. 4. **Run `ros2 topic list` after bringup.** You should see `rt/lowstate` and `rt/sportmode/state` listed. If not, your interface or multicast config is wrong — see [docs/troubleshooting.md](troubleshooting.md). 5. **Start t"},{"url":"unitree_g1.md#safety-contract","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"Safety contract","text":"The tutorial enforces two layers of safety. Do not patch around them. - **Layer 1 — bridge.** `g1_bridge.bridge` refuses to forward `/g1/lowcmd` to the SDK unless `/g1/safety_engaged` is True. - **Layer 2 — controller.** `g1_controller.demo` refuses to publish `/g1/lowcmd` unless `/g1/safety_engaged` is True. Both layers subscribe to the latch with `transient_local` durability so a node that joins late still sees the current value. Engaging the latch: ros2 service call /g1/safety/engage std_srvs/srv/Trigger Releasing it: ros2 service call /g1/safety/release std_srvs/srv/Trigger Engaging the la"},{"url":"unitree_g1.md#failure-modes-(and-what-to-do)","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"Failure modes (and what to do)","text":"- **Bridge says \"dropped /g1/lowcmd — safety disengaged\".** The latch is the gate; this is working as designed. Engage with the service call above. - **`ros2 topic hz /g1/lowstate` shows 0 Hz.** No DDS traffic is reaching the bridge. Likely causes: wrong interface in `cyclonedds.xml`, no IP on 192.168.123.x, multicast blocked on the interface. - **Bridge crashes at startup with \"ChannelFactoryInitialize fail\".** The SDK can't bind the interface name you passed. Check `ip link show <name>`. - **G1 falls when you call STAND.** It wasn't hoisted, or you gave it `STAND_UP` from `SIT` without the p"},{"url":"unitree_g1.md#pedagogical-scope,-not-production-stack","doc":"unitree_g1.md","doc_title":"Unitree G1","heading":"Pedagogical scope, not production stack","text":"The tutorial's G1 packages teach the shape of an integration — state flowing in, commands flowing out, a safety latch in the middle. A production stack adds: - Gain ramping (smoothstep entry / exit on every motion). - Watchdog with hard-fail to damping after stale-state timeouts. - CRC validation on inbound LowState. - Mode-machine cross-check before publishing LowCmd. - Sportmode API for high-level behaviors (the tutorial uses LowCmd-only paths for clarity). These are good follow-up exercises, not omissions to apologize for."},{"url":"troubleshooting.md#troubleshooting","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Troubleshooting","text":"The shortest path to the fix, by symptom."},{"url":"troubleshooting.md#install","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Install","text":""},{"url":"troubleshooting.md#\"micromamba:-command-not-found\"-after-install.sh","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"micromamba: command not found\" after install.sh","text":"The install script writes the discovered location to `install/.discovered.sh`. Re-source it: source install/.discovered.sh which $TUTORIAL_MAMBA_BIN If `.discovered.sh` doesn't exist, run `bash install/01_micromamba.sh`."},{"url":"troubleshooting.md#`pip-install`-complains-about-`--break-system-packages`","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"`pip install` complains about `--break-system-packages`","text":"You're running pip outside the env. Check `which python` — it should be `$TUTORIAL_ROS_ENV/bin/python`. If it isn't, re-source `scripts/ros2_env.sh`."},{"url":"troubleshooting.md#install-wants-to-download-3.5-gb","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Install wants to download 3.5 GB","text":"`02_robostack_ros2.sh` couldn't find your existing ROS 2 env. Check `$HOME/micromamba/envs/`. If nothing is there, the prompt is correct — you do need a fresh env. Confirm with `TUTORIAL_INSTALL_ROS=1 bash install/install.sh`."},{"url":"troubleshooting.md#build-(colcon)","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Build (colcon)","text":""},{"url":"troubleshooting.md#\"colcon:-command-not-found\"","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"colcon: command not found\"","text":"`source scripts/ros2_env.sh` wasn't run in this shell."},{"url":"troubleshooting.md#\"package-not-found\"-when-running-an-entry-point","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"Package not found\" when running an entry point","text":"The resource marker is missing or `data_files` in `setup.py` doesn't include it. Check: ls ws/src/<pkg>/resource/<pkg> # must exist as an empty file grep -A2 data_files ws/src/<pkg>/setup.py "},{"url":"troubleshooting.md#\"no-module-named-'humanoid_msgs'\"","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"No module named 'humanoid_msgs'\"","text":"The interfaces package didn't build before its consumers. Force order: cd ws colcon build --packages-select humanoid_msgs source install/setup.bash colcon build --packages-skip-build-finished "},{"url":"troubleshooting.md#runtime-(rclpy--ros-2)","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Runtime (rclpy / ROS 2)","text":""},{"url":"troubleshooting.md#`ros2-topic-list`-is-empty","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"`ros2 topic list` is empty","text":"The daemon is dead or DDS discovery is broken: ros2 daemon stop ros2 daemon start ros2 topic list If still empty: echo $ROS_DOMAIN_ID echo $RMW_IMPLEMENTATION # expect rmw_cyclonedds_cpp echo $CYCLONEDDS_URI A different `ROS_DOMAIN_ID` in two shells = invisible topic graphs."},{"url":"troubleshooting.md#subscriber-receives-nothing-despite-the-publisher-being-up","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Subscriber receives nothing despite the publisher being up","text":"QoS mismatch. Both sides must agree: ros2 topic info /<topic> -v Look at the Publishers / Subscriptions sections; if reliability or durability differs, fix one side."},{"url":"troubleshooting.md#\"rclpy.spin()\"-never-returns-on-ctrl+c","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"rclpy.spin()\" never returns on Ctrl+C","text":"You ran the node directly with `python3`, not through `ros2 run`. The `ros2 run` wrapper installs a SIGINT handler that wakes `spin()`. Either use `ros2 run` or add to your own `main`: import signal signal.signal(signal.SIGINT, lambda *_: rclpy.shutdown()) (The lesson nodes all wrap `rclpy.spin` in `try/except KeyboardInterrupt`, which is the lighter-weight version of the same idea.)"},{"url":"troubleshooting.md#g1--bridge","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"G1 / bridge","text":""},{"url":"troubleshooting.md#`ros2-topic-hz-g1lowstate`-shows-0-hz,-no-robot-connected","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"`ros2 topic hz /g1/lowstate` shows 0 Hz, no robot connected","text":"Expected. Run with the fake emitter: G1_BRIDGE_FAKE=1 ros2 run g1_bridge bridge You should now see 50 Hz on `/g1/lowstate`."},{"url":"troubleshooting.md#`g1lowstate`-is-empty-but-`g1imu`-works","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"`/g1/lowstate` is empty but `/g1/imu` works","text":"`humanoid_msgs` isn't built. The bridge falls back to publishing only IMU when the custom message types aren't found. Build `humanoid_msgs` and re-source `ws/install/setup.bash`."},{"url":"troubleshooting.md#\"dropped-g1lowcmd-—-safety-disengaged\"-floods-the-log","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"dropped /g1/lowcmd — safety disengaged\" floods the log","text":"Working as designed. Engage safety **deliberately** before expecting motion: ros2 service call /g1/safety/engage std_srvs/srv/Trigger If you want commands forwarded *without* engaging safety, you've misunderstood the safety contract. Don't."},{"url":"troubleshooting.md#bridge-crashes-with-\"channelfactoryinitialize-fail\"","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Bridge crashes with \"ChannelFactoryInitialize fail\"","text":"The interface name in `cyclonedds.xml` (or as `iface:=...` param) doesn't exist. `ip -br addr` shows the real interface names; pick the one on the 192.168.123.0/24 segment."},{"url":"troubleshooting.md#audio-(g1_speech)","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Audio (g1_speech)","text":""},{"url":"troubleshooting.md#\"sounddevice-unavailable\"-on-`ros2-run-g1_speech-listen`","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"sounddevice unavailable\" on `ros2 run g1_speech listen`","text":"Pip extras haven't been added to the env. Run `bash install/03_pip_layer.sh`."},{"url":"troubleshooting.md#recording-works-but-vad-never-triggers","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Recording works but VAD never triggers","text":"Microphone gain is too low for the energy threshold; the Silero model isn't downloaded so we fell back to energy VAD. Either: - Increase mic gain in pavucontrol / Windows sound settings. - Drop the Silero ONNX in `ws/src/g1_speech/g1_speech/models/silero_vad.onnx`."},{"url":"troubleshooting.md#piper-says-\"voice-model-not-found\"","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Piper says \"voice model not found\"","text":"Download a voice: mkdir -p ~/.cache/piper-voices python -m piper.download_voices en_US-lessac-medium --download-dir ~/.cache/piper-voices/ Or set the `voice` parameter to one you have: ros2 run g1_speech speak --ros-args -p voice:=en_US-amy-medium "},{"url":"troubleshooting.md#lifecycle-(lesson-05,-controller)","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Lifecycle (lesson 05, controller)","text":""},{"url":"troubleshooting.md#\"node-is-not-configured\"-after-`ros2-lifecycle-set-...-activate`","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"node is not configured\" after `ros2 lifecycle set ... activate`","text":"Lifecycle transitions are linear: `unconfigured → inactive → active`. You have to `configure` first, then `activate`. List the available transitions: ros2 lifecycle list /g1_controller "},{"url":"troubleshooting.md#\"transition-not-registered\"-on-a-lifecycle-command","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"\"transition not registered\" on a lifecycle command","text":"Spelling. ROS 2's lifecycle CLI is case-sensitive on the labels but accepts both label (`configure`) and numeric id (`1`)."},{"url":"troubleshooting.md#tests","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Tests","text":""},{"url":"troubleshooting.md#`pytest`-fails-with-`modulenotfounderror:-rclpy`","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"`pytest` fails with `ModuleNotFoundError: rclpy`","text":"You ran pytest outside the env. From the activated shell: source scripts/ros2_env.sh pytest tests/ "},{"url":"troubleshooting.md#tests-pass-locally-but-fail-in-ci","doc":"troubleshooting.md","doc_title":"Troubleshooting","heading":"Tests pass locally but fail in CI","text":"CI is missing the workspace install. Make sure CI sources `ws/install/setup.bash` after `colcon build`."}]
+</script>
+
+<script>
+(() => {
+"use strict";
+
+// ────────────────────────────────────────────────────────────────
+// 1) Wrap every <pre> in a .codewrap so we can position copy buttons.
+//    Add a top-right "copy" button (whole block) AND if the block has
+//    $ prompts, add a per-line copy on each command line.
+// ────────────────────────────────────────────────────────────────
+const PROMPT_RE = /^\s*\$\s+/;
+
+function copyText(text, btn) {
+  const done = () => {
+    const old = btn.textContent;
+    btn.textContent = "copied";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = old;
+      btn.classList.remove("copied");
+    }, 1100);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallback(text, done));
+  } else {
+    fallback(text, done);
+  }
+}
+function fallback(text, done) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) {}
+  document.body.removeChild(ta);
+}
+
+function extractCommands(pre) {
+  // Walk visible text line-by-line, keeping only lines that start with $.
+  // Strip the prompt; join continuation lines (ending with backslash).
+  const lines = pre.textContent.split(/\n/);
+  const out = [];
+  let buf = null;
+  for (const line of lines) {
+    if (PROMPT_RE.test(line)) {
+      if (buf !== null) out.push(buf);
+      buf = line.replace(PROMPT_RE, "");
+    } else if (buf !== null && /\\\s*$/.test(buf)) {
+      // continuation
+      buf = buf.replace(/\\\s*$/, "") + " " + line.trim();
+    } else if (buf !== null) {
+      out.push(buf);
+      buf = null;
+    }
+  }
+  if (buf !== null) out.push(buf);
+  return out.join("\n");
+}
+
+function instrumentPre(pre) {
+  if (pre.parentElement && pre.parentElement.classList.contains("codewrap")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "codewrap";
+  pre.parentNode.insertBefore(wrap, pre);
+  wrap.appendChild(pre);
+
+  const hasPrompt = pre.textContent.split(/\n/).some(l => PROMPT_RE.test(l));
+  wrap.dataset.mode = hasPrompt ? "cmd" : "all";
+
+  const btn = document.createElement("button");
+  btn.className = "copy-btn";
+  btn.type = "button";
+  btn.textContent = hasPrompt ? "copy commands" : "copy";
+  btn.title = hasPrompt ? "Copy command lines (skips $ prompt + output)" : "Copy block";
+  btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    const text = hasPrompt ? extractCommands(pre) : pre.textContent;
+    copyText(text, btn);
+  });
+  wrap.appendChild(btn);
+
+  // Per-line copy buttons on each command line
+  if (hasPrompt) addPerLineButtons(pre);
+}
+
+function addPerLineButtons(pre) {
+  // We rebuild the innerHTML splitting on newlines and wrapping prompt lines.
+  // Preserve existing spans by walking child nodes.
+  const tokens = []; // array of {html, text, isCmd}
+  let curHtml = "", curText = "";
+  let isCmd = false;
+  pre.childNodes.forEach(node => {
+    const html = node.nodeType === Node.ELEMENT_NODE ? node.outerHTML : node.nodeValue;
+    const text = node.textContent;
+    const parts = text.split(/\n/);
+    if (node.nodeType === Node.TEXT_NODE) {
+      // splice text node by newlines
+      for (let i = 0; i < parts.length; i++) {
+        const escaped = parts[i].replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+        if (i === 0) {
+          curHtml += escaped;
+          curText += parts[i];
+        } else {
+          tokens.push({html: curHtml, text: curText, isCmd: PROMPT_RE.test(curText)});
+          curHtml = escaped;
+          curText = parts[i];
+        }
+      }
+    } else {
+      // element node — keep its outerHTML attached to the current line.
+      // If the element's text contains newlines, split similarly.
+      if (text.includes("\n")) {
+        // For simple span tags this rarely happens, but handle it.
+        const lines = text.split(/\n/);
+        // First chunk attaches to current line
+        const first = lines.shift();
+        // approximate by re-emitting the tag for each chunk
+        const tag = node.tagName.toLowerCase();
+        const attrs = Array.from(node.attributes).map(a => ` ${a.name}="${a.value}"`).join("");
+        curHtml += `<${tag}${attrs}>${first.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</${tag}>`;
+        curText += first;
+        for (const piece of lines) {
+          tokens.push({html: curHtml, text: curText, isCmd: PROMPT_RE.test(curText)});
+          curHtml = `<${tag}${attrs}>${piece.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</${tag}>`;
+          curText = piece;
+        }
+      } else {
+        curHtml += html;
+        curText += text;
+      }
+    }
+  });
+  if (curText !== "" || curHtml !== "") {
+    tokens.push({html: curHtml, text: curText, isCmd: PROMPT_RE.test(curText)});
+  }
+
+  pre.innerHTML = tokens.map(t => {
+    if (t.isCmd) {
+      return `<span class="cmd-line">${t.html}<button type="button" class="line-copy" title="Copy this line">copy</button></span>`;
+    }
+    return t.html;
+  }).join("\n");
+
+  // Attach handlers
+  pre.querySelectorAll(".cmd-line").forEach(line => {
+    const btn = line.querySelector(".line-copy");
+    if (!btn) return;
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const txt = line.textContent.replace(/copy$/,"").replace(PROMPT_RE,"").replace(/\\\s*$/,"").trim();
+      copyText(txt, btn);
+    });
+  });
+}
+
+document.querySelectorAll("pre").forEach(instrumentPre);
+
+// ────────────────────────────────────────────────────────────────
+// 2) Build the full-text search index from the DOM + embedded refs.
+// ────────────────────────────────────────────────────────────────
+const index = [];
+
+document.querySelectorAll("section.lesson").forEach(section => {
+  const id = section.id;
+  if (!id) return;
+  const titleEl = section.querySelector("header h2");
+  const summaryEl = section.querySelector("header p.summary");
+  const crumbEl = section.querySelector("header .crumb");
+  const title = titleEl ? titleEl.textContent.trim() : id;
+  const summary = summaryEl ? summaryEl.textContent.trim() : "";
+  const crumb = crumbEl ? crumbEl.textContent.trim() : "";
+  // Pull readable text from paragraphs, lists, headings, code, table cells
+  const bits = [];
+  section.querySelectorAll("p, li, h3, h4, code, td, th").forEach(el => {
+    bits.push(el.textContent.replace(/\s+/g, " ").trim());
+  });
+  const text = bits.join(" ");
+  index.push({
+    kind: "section",
+    badge: crumb || "section",
+    href: "#" + id,
+    title,
+    summary,
+    text: (title + " " + summary + " " + text).toLowerCase(),
+  });
+});
+
+// Add the embedded markdown reference index
+try {
+  const refData = JSON.parse(document.getElementById("reference-index").textContent);
+  for (const ref of refData) {
+    index.push({
+      kind: "ref",
+      badge: ref.doc_title,
+      href: ref.url,
+      title: ref.heading,
+      summary: ref.text.slice(0, 140) + (ref.text.length > 140 ? "…" : ""),
+      text: (ref.heading + " " + ref.text + " " + ref.doc_title).toLowerCase(),
+    });
+  }
+} catch (e) { console.warn("reference-index parse failed", e); }
+
+// ────────────────────────────────────────────────────────────────
+// 3) Search UI
+// ────────────────────────────────────────────────────────────────
+const input = document.getElementById("search-input");
+const results = document.getElementById("search-results");
+
+function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function highlight(text, q) {
+  if (!q) return escHtml(text);
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx < 0) return escHtml(text);
+  return escHtml(text.slice(0, idx)) + "<mark>" + escHtml(text.slice(idx, idx+q.length)) + "</mark>" + escHtml(text.slice(idx+q.length));
+}
+
+function snippet(text, q) {
+  // Pull a window of context around the first match
+  if (!q) return text.slice(0, 140);
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx < 0) return text.slice(0, 140);
+  const start = Math.max(0, idx - 40);
+  const end   = Math.min(text.length, idx + q.length + 100);
+  return (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
+}
+
+function rank(item, q) {
+  if (!q) return -Infinity;
+  let score = 0;
+  const t = item.title.toLowerCase();
+  const s = item.summary.toLowerCase();
+  const text = item.text;
+  if (t === q) score += 1000;
+  if (t.startsWith(q)) score += 500;
+  if (t.includes(q)) score += 200;
+  if (s.includes(q)) score += 50;
+  // count occurrences in body text
+  const occ = text.split(q).length - 1;
+  score += Math.min(occ * 5, 80);
+  if (item.kind === "section") score += 30;
+  return score;
+}
+
+function render(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) {
+    results.classList.remove("open");
+    results.innerHTML = "";
+    return;
+  }
+  const matched = index
+    .map(item => ({ item, score: rank(item, q) }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 12);
+
+  if (matched.length === 0) {
+    results.classList.add("open");
+    results.innerHTML = '<div class="empty">No matches.</div>';
+    return;
+  }
+  results.innerHTML = matched.map(({item}) => {
+    const snipText = snippet(item.text.replace(/\s+/g, " "), q);
+    return `<a class="res" href="${item.href}" data-href="${item.href}">
+      <div class="ttl"><span class="badge ${item.kind === "ref" ? "ref" : ""}">${escHtml(item.badge)}</span>${escHtml(item.title)}</div>
+      <div class="snip">${highlight(snipText, q)}</div>
+    </a>`;
+  }).join("");
+  results.classList.add("open");
+}
+
+input.addEventListener("input", e => render(e.target.value));
+input.addEventListener("focus", e => { if (e.target.value) render(e.target.value); });
+input.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    input.value = "";
+    results.classList.remove("open");
+    input.blur();
+  }
+});
+
+// "/" focuses the search box from anywhere
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement !== input && !e.metaKey && !e.ctrlKey) {
+    e.preventDefault();
+    input.focus();
+    input.select();
+  }
+});
+
+// Click outside closes results
+document.addEventListener("click", e => {
+  if (!results.contains(e.target) && e.target !== input) {
+    results.classList.remove("open");
+  }
+});
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>g1_controller</name>
+  <version>0.1.0</version>
+  <description>Lesson 09 — high-level controller for the G1: sit, stand, wave, walk-to-pose. Composes bridge + safety + msgs.</description>
+  <maintainer email="tutorial@example.com">ROS Tutorial</maintainer>
+  <license>MIT</license>
+
+  <depend>rclpy</depend>
+  <depend>std_srvs</depend>
+  <depend>std_msgs</depend>
+  <depend>humanoid_msgs</depend>
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

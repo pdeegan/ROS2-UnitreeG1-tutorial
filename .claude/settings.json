@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "env": {
+    "ROS_TUTORIAL_HARNESS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Read(./**)",
+      "Read(//home/code0x19/SOFTWARE/agent-alignment/**)",
+      "Read(//home/code0x19/SOFTWARE/CosmicBrain/master-control-agent/**)",
+      "Read(//home/code0x19/micromamba/**)",
+      "Read(//home/code0x19/.local/bin/micromamba)",
+      "Read(//home/code0x19/.claude/**)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git rev-parse*)",
+      "Bash(git ls-files*)",
+      "Bash(git add *)",
+      "Bash(git restore *)",
+      "Bash(git commit *)",
+      "Bash(git switch *)",
+      "Bash(git checkout *)",
+      "Bash(ls *)",
+      "Bash(find . *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(diff *)",
+      "Bash(jq *)",
+      "Bash(mkdir -p *)",
+      "Bash(touch *)",
+      "Bash(chmod +x *)",
+      "Bash(ln -sf *)",
+      "Bash(cat /etc/os-release)",
+      "Bash(cat /proc/version)",
+      "Bash(uname *)",
+      "Bash(nvidia-smi*)",
+      "Bash(ip -br addr*)",
+      "Bash(df -h *)",
+      "Bash(bash install/*)",
+      "Bash(bash scripts/*)",
+      "Bash(bash .claude/scripts/*)",
+      "Bash(python3 -m py_compile *)",
+      "Bash(python3 -c *)",
+      "Bash(python -c *)",
+      "Bash(/home/code0x19/.local/bin/micromamba run *)",
+      "Bash(/home/code0x19/micromamba/envs/ros2_jazzy/bin/* *)",
+      "Bash(ros2 *)",
+      "Bash(colcon *)",
+      "Bash(pytest *)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git push)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(apt-get install*)",
+      "Bash(sudo *)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~*)",
+      "Bash(rm -rf .git*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git push --no-verify*)",
+      "Bash(git commit --no-verify*)",
+      "Bash(git commit --no-gpg-sign*)",
+      "Bash(git reset --hard origin/main*)",
+      "Bash(git reset --hard origin/master*)",
+      "Bash(git config *)",
+      "Bash(chmod -R 777 *)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.key)",
+      "Read(**/*.pem)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/scripts/session_start.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $CLAUDE_PROJECT_DIR/.claude/scripts/post_edit_verify.sh",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash $CLAUDE_PROJECT_DIR/.claude/scripts/statusline.sh"
+  }
+}

@@ -1,0 +1,19 @@
+# Defaults for `colcon build` in this workspace.
+#
+# Why this file exists
+# --------------------
+# RoboStack's Jazzy env ships CMake 4.2, whose FindPython3 module
+# refuses to mark the Development.Module / NumPy components as
+# "found" without explicit hints — even though the headers are
+# physically present in the conda env. Setting these CMake args
+# turns the failure into a normal build.
+#
+# Use this file via:
+#   colcon --defaults-file ws/colcon-defaults.yaml build
+# or — the easier path — `bash scripts/ros2_build.sh` which
+# resolves the per-env paths and forwards them for you.
+
+build:
+  symlink-install: false
+  cmake-args:
+    - "-Wno-dev"

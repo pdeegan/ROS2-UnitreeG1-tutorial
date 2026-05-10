@@ -1,0 +1,22 @@
+# Project pip extras layered into the existing RoboStack ROS 2 env.
+# 03_pip_layer.sh probes each module and skips what's already present;
+# this file is the reference list, not the source of truth at install time.
+#
+# Anything that conda-forge already ships (rclpy, cyclonedds,
+# numpy, colcon, pytest, unitree_sdk2py) is NOT listed here — it
+# comes from the existing env.
+
+# Audio I/O for g1_speech (microphone capture, file I/O)
+sounddevice>=0.4.6
+soundfile>=0.12
+
+# ONNX runtime for the Silero VAD model. Swap for onnxruntime-gpu
+# on the 4090 if you want CUDA — ~10x faster on long streams.
+onnxruntime>=1.17
+
+# Offline TTS — small, CPU-fast, ships its own voice models.
+piper-tts>=1.2 ; python_version<"3.13"
+
+# Test helpers (pytest itself is already in the env).
+pytest-timeout>=2.2
+pytest-asyncio>=0.23

@@ -1,0 +1,5 @@
+# Switch the high-level sport mode (sit / stand / walk / damping / wave).
+humanoid_msgs/SportMode mode
+---
+bool success
+string message

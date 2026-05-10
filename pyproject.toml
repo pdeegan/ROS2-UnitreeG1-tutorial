@@ -1,0 +1,22 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra -q --timeout=30"
+markers = [
+    "hardware: requires a connected G1 robot (skipped by default)",
+    "ros_runtime: requires a running ROS 2 daemon",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = ["ws/build", "ws/install", "ws/log", ".env_ros2", ".micromamba"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]   # line length handled by editor, not lint
+
+[tool.mypy]
+python_version = "3.11"
+strict_optional = true
+ignore_missing_imports = true
+exclude = "ws/(build|install|log)"
