@@ -7,7 +7,7 @@
 # comes from the existing env.
 
 # Audio I/O for g1_speech (microphone capture, file I/O)
-sounddevice>=0.4.6
+sounddevice>=0.5.5
 soundfile>=0.12
 
 # ONNX runtime for the Silero VAD model. Swap for onnxruntime-gpu
