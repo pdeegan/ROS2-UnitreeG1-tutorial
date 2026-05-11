@@ -53,11 +53,25 @@ done
 # ─────────────────────────────────────────────────────────────
 nuke_orphans() {
   # Kill anything from a previous run of THIS script that might be lingering.
-  pkill -9 -f 'tutorial_basics|tutorial_pubsub|tutorial_services|tutorial_actions' 2>/dev/null || true
-  pkill -9 -f 'tutorial_lifecycle|tutorial_tf|tutorial_sim|joint_animator' 2>/dev/null || true
-  pkill -9 -f 'g1_bridge|safety_latch|g1_speech|g1_controller' 2>/dev/null || true
-  pkill -9 -f 'robot_state_publisher|rviz2|rosbag' 2>/dev/null || true
-  pkill -9 -f 'ros2 launch tutorial_sim' 2>/dev/null || true
+  # IMPORTANT: patterns must be specific enough to NOT match the running
+  # e2e shell or any wrapper whose argv happens to mention these words.
+  # We anchor on `lib/<pkg>/<exe>` install paths or `ros2 bag` head, which
+  # the script body does not contain literally.
+  pkill -9 -f '/lib/tutorial_basics/'    2>/dev/null || true
+  pkill -9 -f '/lib/tutorial_pubsub/'    2>/dev/null || true
+  pkill -9 -f '/lib/tutorial_services/'  2>/dev/null || true
+  pkill -9 -f '/lib/tutorial_actions/'   2>/dev/null || true
+  pkill -9 -f '/lib/tutorial_lifecycle/' 2>/dev/null || true
+  pkill -9 -f '/lib/tutorial_tf/'        2>/dev/null || true
+  pkill -9 -f '/lib/tutorial_sim/'       2>/dev/null || true
+  pkill -9 -f '/lib/g1_bridge/'          2>/dev/null || true
+  pkill -9 -f '/lib/g1_speech/'          2>/dev/null || true
+  pkill -9 -f '/lib/g1_controller/'      2>/dev/null || true
+  pkill -9 -f 'robot_state_publisher$'   2>/dev/null || true   # process name only
+  pkill -9 -f '/bin/rviz2$'              2>/dev/null || true
+  # rosbag2_recorder is the actual recorder; "rosbag" alone matches our help text
+  pkill -9 -f 'rosbag2_recorder'         2>/dev/null || true
+  pkill -9 -f 'rosbag2_player'           2>/dev/null || true
   sleep 0.3
 }
 
@@ -398,30 +412,34 @@ sleep 1
 bag_ok=0
 : > /tmp/e2e_bag_rec.log     # truncate at start of phase
 for attempt_window in 3 5; do
-  # Make absolutely sure no previous bag-record process is still alive
-  # holding sockets — a half-killed one will starve the next attempt.
-  pkill -KILL -f 'ros2 bag record' 2>/dev/null || true
-  rm -rf /tmp/e2e_bags/rt
-  echo ">>> attempt window=${attempt_window}s @ $(date +%H:%M:%S)" >> /tmp/e2e_bag_rec.log
+  # Use a unique bag name per attempt — avoids any race where a stale
+  # writer from the previous attempt is still holding files in `rt/`.
+  bag_name="rt$$_${attempt_window}"
+  rm -rf "/tmp/e2e_bags/$bag_name"
+  echo ">>> attempt window=${attempt_window}s name=${bag_name} @ $(date +%H:%M:%S)" \
+    >> /tmp/e2e_bag_rec.log
+  # `setsid` gives the bag its own session/process group, so external
+  # pkill -f patterns matching common substrings can't accidentally hit it.
   ( cd /tmp/e2e_bags && \
-    timeout -s INT --kill-after=4 "$attempt_window" \
-       ros2 bag record -o rt --topics /joint_states /tf \
+    setsid timeout -s INT --kill-after=4 "$attempt_window" \
+       ros2 bag record -o "$bag_name" --topics /joint_states /tf \
        >> /tmp/e2e_bag_rec.log 2>&1 || true )
-  # Wait for rosbag2 to flush metadata.yaml — it logs "may take a while".
+  # Wait for rosbag2 to flush metadata.yaml — "may take a while" after SIGINT.
   for _ in $(seq 1 15); do
-    [[ -f /tmp/e2e_bags/rt/metadata.yaml ]] && break
+    [[ -f "/tmp/e2e_bags/$bag_name/metadata.yaml" ]] && break
     sleep 0.2
   done
-  if [[ -f /tmp/e2e_bags/rt/metadata.yaml ]]; then
+  if [[ -f "/tmp/e2e_bags/$bag_name/metadata.yaml" ]]; then
+    bag_dir="/tmp/e2e_bags/$bag_name"
     bag_ok=1; break
   fi
   echo "<<< attempt failed; retrying" >> /tmp/e2e_bag_rec.log
 done
 
 if (( bag_ok == 1 )); then
-  ok "rosbag record produced metadata.yaml"
+  ok "rosbag record produced metadata.yaml ($bag_dir)"
 
-  if ros2 bag info /tmp/e2e_bags/rt > /tmp/e2e_bag_info.log 2>&1 \
+  if ros2 bag info "$bag_dir" > /tmp/e2e_bag_info.log 2>&1 \
      && grep -q "Messages:" /tmp/e2e_bag_info.log; then
     msgs=$(grep "Messages:" /tmp/e2e_bag_info.log | head -1 | awk '{print $NF}')
     if [[ "$msgs" -gt 0 ]]; then
@@ -436,8 +454,8 @@ else
   fail "rosbag record didn't produce metadata.yaml after 2 attempts (log: /tmp/e2e_bag_rec.log)"
   echo "  --- bag_rec.log: ---"
   sed 's/^/    /' /tmp/e2e_bag_rec.log
-  echo "  --- bag dir contents: ---"
-  ls /tmp/e2e_bags/rt 2>&1 | sed 's/^/    /'
+  echo "  --- /tmp/e2e_bags contents: ---"
+  ls /tmp/e2e_bags 2>&1 | sed 's/^/    /'
   echo "  --- sim launch log tail: ---"
   tail -10 /tmp/e2e_sim_for_bag.log | sed 's/^/    /'
   skip "rosbag info — no bag to query"
@@ -451,7 +469,7 @@ cleanup_phase
 
 # Replay — should republish /joint_states (only if record succeeded)
 if (( bag_ok == 1 )); then
-  timeout -s INT --kill-after=1 3 ros2 bag play /tmp/e2e_bags/rt \
+  setsid timeout -s INT --kill-after=1 3 ros2 bag play "$bag_dir" \
     > /tmp/e2e_bag_play.log 2>&1 &
   PLAY_PID=$!
   # Wait up to ~2 s for the topic to reappear on the graph.
