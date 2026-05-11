@@ -100,13 +100,13 @@ so a node that joins late still sees the current value.
 Engaging the latch:
 
 ```bash
-ros2 service call /g1/safety/engage std_srvs/srv/Trigger
+ros2 service call /g1/safety/engage std_srvs/srv/Trigger '{}'
 ```
 
 Releasing it:
 
 ```bash
-ros2 service call /g1/safety/release std_srvs/srv/Trigger
+ros2 service call /g1/safety/release std_srvs/srv/Trigger '{}'
 ```
 
 Engaging the latch does **not** start motion. It only stops the

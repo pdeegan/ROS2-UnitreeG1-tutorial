@@ -104,4 +104,4 @@ urdfs=$(find "$DEST" -maxdepth 2 -name '*.urdf' | wc -l)
 meshes=$(find "$DEST" -name '*.STL' -o -name '*.stl' -o -name '*.dae' 2>/dev/null | wc -l)
 log "vendored: $urdfs URDF variant(s), $meshes mesh file(s)"
 log "next: bash scripts/ros2_build.sh g1_description"
-log "      bash scripts/tools/sim_up.sh g1     # (after the build)"
+log "      bash scripts/tools/sim_up.sh        # G1 is the default; or walk/squat/tpose/wave"

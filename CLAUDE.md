@@ -160,8 +160,8 @@ When editing anything under `ws/src/g1_bridge/` or `g1_controller/`:
   side, not the application side. A bug in `g1_controller` should
   still fail closed.
 - Default torques and gains in lesson code must be conservative. A
-  reader running `ros2 run g1_controller wave` for the first time
-  should not see violent motion.
+  reader running `ros2 run g1_controller wave_client` for the first
+  time should not see violent motion.
 - Damping mode is the safe default state. Stand and walk modes are
   opt-in via explicit service calls.
 

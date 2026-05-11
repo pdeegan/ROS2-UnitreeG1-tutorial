@@ -54,19 +54,19 @@ rings.
 
 ## Topic / service / action contract
 
-The contract `g1_bridge` exposes — what nodes downstream can rely on:
+The system contract — what every node downstream can rely on. The
+"Owner" column names which node creates each topic/service:
 
-| Direction | Name | Type | QoS |
-|---|---|---|---|
-| from robot | `/g1/lowstate` | `humanoid_msgs/LowState` | `sensor_data` |
-| from robot | `/g1/imu` | `sensor_msgs/Imu` | `sensor_data` |
-| to robot | `/g1/lowcmd` | `humanoid_msgs/LowCmd` | `sensor_data` |
-| controller | `/g1/set_mode` | `humanoid_msgs/srv/SetMode` | reliable |
-| safety | `/g1/safety_engaged` | `std_msgs/Bool` | reliable + transient_local |
-| safety | `/g1/safety/engage` | `std_srvs/srv/Trigger` | reliable |
-| safety | `/g1/safety/release` | `std_srvs/srv/Trigger` | reliable |
-| speech | `/g1/speech/utter` | `std_msgs/String` (base64 WAV) | reliable, depth=10 |
-| speech | `/g1/speech/say` | `std_srvs/srv/Trigger` | reliable |
+| Direction | Name | Type | QoS | Owner |
+|---|---|---|---|---|
+| from robot | `/g1/lowstate` | `humanoid_msgs/LowState` | `sensor_data` | `g1_bridge` |
+| from robot | `/g1/imu` | `sensor_msgs/Imu` | `sensor_data` | `g1_bridge` |
+| to robot | `/g1/lowcmd` | `humanoid_msgs/LowCmd` | `sensor_data` | `g1_bridge` (subscribes) |
+| controller | `/g1/set_mode` | `humanoid_msgs/srv/SetMode` | reliable | `g1_controller` |
+| safety | `/g1/safety_engaged` | `std_msgs/Bool` | reliable + transient_local | `g1_bridge/safety` |
+| safety | `/g1/safety/engage` | `std_srvs/srv/Trigger` | reliable | `g1_bridge/safety` |
+| safety | `/g1/safety/release` | `std_srvs/srv/Trigger` | reliable | `g1_bridge/safety` |
+| speech | `/g1/speech/say` | `std_srvs/srv/Trigger` | reliable | `g1_speech/speak` |
 
 The two QoS profiles used:
 

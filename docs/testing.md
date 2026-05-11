@@ -83,11 +83,13 @@ within 8 seconds. Skipped under `--quick`.
 
 ### Phase 5 — sim humanoid launches (~10 s)
 
-`ros2 launch tutorial_sim sim.launch.py rviz:=false` brings up:
-`robot_state_publisher` + `joint_animator` + (rviz omitted in test
-mode). Verifies `/joint_states` streams, then exercises
-`ros2 param get/set` to swap the animation pattern from `wave` to
-`walk`. If the G1 URDF is built, repeats with `g1_sim.launch.py`.
+`ros2 launch tutorial_sim g1_sim.launch.py rviz:=false` brings up:
+`robot_state_publisher` + `joint_animator` (rviz omitted in test mode).
+Verifies `/joint_states` streams, then exercises `ros2 param get/set`
+to swap the animation pattern from `wave` to `walk`. Requires the G1
+URDF to be built (`bash install/06_fetch_g1_assets.sh` then
+`bash scripts/ros2_build.sh g1_description`); the phase skips
+otherwise.
 
 ### Phase 6 — G1 bridge in fake mode (~5 s)
 
@@ -139,16 +141,17 @@ walk this list manually after the e2e is green:
 ```bash
 source scripts/ros2_env.sh
 
-# 1. Toy humanoid in rviz
+# 1. Real Unitree G1 in rviz (default pattern: wave)
+bash install/06_fetch_g1_assets.sh         # one-time, ~150 MB
+bash scripts/ros2_build.sh g1_description  # one-time
 bash scripts/tools/sim_up.sh
-#   should see: rviz2 window with orange-and-blue humanoid waving
+#   should see: rviz2 window with the Unitree G1, right arm waving
 
-# 2. Real Unitree G1 in rviz (after fetch) — G1 URDF is the default;
-#    pass walk/squat/tpose for other patterns
-bash install/06_fetch_g1_assets.sh
-bash scripts/ros2_build.sh g1_description
-bash scripts/tools/sim_up.sh        # default pattern (wave)
-#   should see: rviz2 window with the actual G1 model, arms moving
+# 2. Other animation patterns
+bash scripts/tools/sim_up.sh walk          # walking gait
+bash scripts/tools/sim_up.sh squat         # squat cycle
+bash scripts/tools/sim_up.sh tpose         # calibration pose
+bash scripts/tools/sim_up.sh stretch       # full-body rotation
 
 # 3. The live topic graph
 bash scripts/tools/rqt_graph.sh

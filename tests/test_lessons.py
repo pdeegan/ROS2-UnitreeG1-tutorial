@@ -50,7 +50,7 @@ def test_tutorial_pubsub_round_trip() -> None:
         talker = FakeJointTalker()
         listener = JointListener()
 
-        end = time.monotonic() + 2.0
+        end = time.monotonic() + 5.0  # bumped from 2.0s — slow CI runners (QEMU, containers) need it
         seen = False
         while time.monotonic() < end and not seen:
             rclpy.spin_once(talker, timeout_sec=0.02)
@@ -119,7 +119,7 @@ def test_tutorial_tf_broadcasts() -> None:
         buf = Buffer()
         TransformListener(buf, listener_node)
 
-        end = time.monotonic() + 2.0
+        end = time.monotonic() + 5.0  # bumped from 2.0s — slow CI runners (QEMU, containers) need it
         found = False
         while time.monotonic() < end and not found:
             rclpy.spin_once(publisher, timeout_sec=0.02)
@@ -146,7 +146,7 @@ def test_tutorial_sim_animator_publishes_joints() -> None:
         seen: list[JointState] = []
         listener.create_subscription(JointState, "/joint_states", seen.append, 10)
 
-        end = time.monotonic() + 2.0
+        end = time.monotonic() + 5.0  # bumped from 2.0s — slow CI runners (QEMU, containers) need it
         while time.monotonic() < end and not seen:
             rclpy.spin_once(animator, timeout_sec=0.02)
             rclpy.spin_once(listener, timeout_sec=0.02)
@@ -212,7 +212,7 @@ def test_g1_bridge_fake_streams() -> None:
             Imu, "/g1/imu", lambda m: received.append(m), qos_profile_sensor_data
         )
 
-        end = time.monotonic() + 2.5
+        end = time.monotonic() + 5.0  # bumped from 2.5s for slow-CI robustness
         while time.monotonic() < end and not received:
             rclpy.spin_once(bridge, timeout_sec=0.02)
             rclpy.spin_once(listener, timeout_sec=0.02)

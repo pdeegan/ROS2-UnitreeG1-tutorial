@@ -32,7 +32,14 @@ for a in "$@"; do
     -*)          flags+=("$a") ;;
     *)
       # Was the previous flag -o or --output? Then this is the output name.
-      if [[ "${flags[-1]:-}" == "-o" || "${flags[-1]:-}" == "--output" ]]; then
+      # macOS ships bash 3.2 which lacks ${arr[-1]} negative indexing; use
+      # the explicit ${arr[${#arr[@]}-1]} form so the script works on both
+      # Linux bash >=4 and macOS /bin/bash.
+      _flags_last=""
+      if (( ${#flags[@]} > 0 )); then
+        _flags_last="${flags[${#flags[@]}-1]}"
+      fi
+      if [[ "$_flags_last" == "-o" || "$_flags_last" == "--output" ]]; then
         flags+=("$a")
       else
         topics+=("$a")

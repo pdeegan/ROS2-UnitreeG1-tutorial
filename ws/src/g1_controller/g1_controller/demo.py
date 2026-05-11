@@ -65,6 +65,7 @@ class Controller(LifecycleNode):
     def __init__(self) -> None:
         super().__init__("g1_controller")
         self._safety_engaged = False
+        self._active = False  # set in on_activate, cleared in on_deactivate
         self._cmd_pub = None  # type: ignore[var-annotated]
         self._mode_srv = None  # type: ignore[var-annotated]
 
@@ -92,14 +93,17 @@ class Controller(LifecycleNode):
         return TransitionCallbackReturn.SUCCESS
 
     def on_activate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self._active = True
         self.get_logger().info("activated — motion commands enabled (still need safety engaged)")
         return super().on_activate(state)
 
     def on_deactivate(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self._active = False
         self.get_logger().info("deactivated — publisher silent")
         return super().on_deactivate(state)
 
     def on_cleanup(self, state: LifecycleState) -> TransitionCallbackReturn:
+        self._active = False
         if self._cmd_pub is not None:
             self.destroy_publisher(self._cmd_pub)
             self._cmd_pub = None
@@ -132,15 +136,13 @@ class Controller(LifecycleNode):
             return resp
 
         # LifecyclePublisher silently drops messages outside the active
-        # state. Without this check, set_mode returns success=True while
-        # nothing actually flows downstream.
-        try:
-            state_label = self._state_machine.current_state[1]  # type: ignore[attr-defined]
-        except Exception:
-            state_label = None
-        if state_label not in (None, "active"):
+        # state. Without this check, set_mode would return success=True
+        # while nothing actually flows downstream. Track activation in
+        # on_activate/on_deactivate rather than reading any private
+        # rclpy state-machine attribute.
+        if not self._active:
             resp.success = False
-            resp.message = f"refused: controller in '{state_label}' state (lifecycle set to 'active' first)"
+            resp.message = "refused: controller not active (run `ros2 lifecycle set /g1_controller activate` first)"
             self.get_logger().warn(resp.message)
             return resp
 

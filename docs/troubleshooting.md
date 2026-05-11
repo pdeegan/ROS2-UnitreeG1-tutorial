@@ -128,7 +128,7 @@ Working as designed. Engage safety **deliberately** before
 expecting motion:
 
 ```bash
-ros2 service call /g1/safety/engage std_srvs/srv/Trigger
+ros2 service call /g1/safety/engage std_srvs/srv/Trigger '{}'
 ```
 
 If you want commands forwarded *without* engaging safety, you've

@@ -16,9 +16,10 @@ log "detected OS: kind=$TUTORIAL_OS_KIND  family=$TUTORIAL_OS_FAMILY  pkg=$TUTOR
 case "$TUTORIAL_PKG" in
   apt)
     REQUIRED=(
-      curl ca-certificates bzip2 git build-essential cmake pkg-config
+      curl ca-certificates bzip2 xz-utils git build-essential cmake pkg-config
       python3 python3-venv python3-pip
-      libgl1 libglib2.0-0 libxkbcommon0 libegl1
+      libgl1 libglib2.0-0 libxkbcommon0 libxkbcommon-x11-0 libegl1
+      libasound2 libportaudio2
       locales
     )
     missing=()
@@ -42,8 +43,9 @@ case "$TUTORIAL_PKG" in
     ;;
 
   dnf)
-    REQUIRED=(curl ca-certificates bzip2 git gcc-c++ cmake pkgconfig
-              python3 python3-pip mesa-libGL libxkbcommon glibc-langpack-en)
+    REQUIRED=(curl ca-certificates bzip2 xz git gcc-c++ cmake pkgconfig
+              python3 python3-pip mesa-libGL libxkbcommon libxkbcommon-x11
+              alsa-lib portaudio glibc-langpack-en)
     missing=()
     for pkg in "${REQUIRED[@]}"; do
       rpm -q "$pkg" &>/dev/null || missing+=("$pkg")

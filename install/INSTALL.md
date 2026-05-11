@@ -7,7 +7,7 @@ debug it when it bites.
 
 | Platform | Status | Package manager | Notes |
 |---|---|---|---|
-| Debian 13 (trixie) WSL2 | ✅ reference (35/35 e2e green) | apt | The dev box this was built on. NVIDIA passthrough verified. |
+| Debian 13 (trixie) WSL2 | ✅ reference (all e2e phases green) | apt | The dev box this was built on. NVIDIA passthrough verified. |
 | Debian 12 (bookworm) | ✅ should work | apt | Same install path as trixie. |
 | Ubuntu 22.04 / 24.04 | ✅ should work | apt | RoboStack works; native `apt install ros-jazzy-desktop` is also a valid alternative. |
 | Ubuntu 22.04 / 24.04 WSL2 | ✅ should work | apt | Same as native Ubuntu plus `/dev/dxg` GPU passthrough. |
@@ -79,6 +79,7 @@ If you write something that *does* care about the distro, gate on
 | `03_pip_layer.sh` | Install only the missing pip extras (audio + test helpers) | Each module imports already |
 | `04_unitree_sdk.sh` | Verify `unitree_sdk2py` + write CycloneDDS profile | Profile exists |
 | `05_verify.sh` | Green-light check | (always runs) |
+| `06_fetch_g1_assets.sh` (opt-in, not run by `install.sh`) | Sparse-clone `unitreerobotics/unitree_ros` for the G1 URDF + meshes (~150 MB); wraps it as a colcon package under `ws/src/g1_description/` | `ws/src/g1_description/g1_29dof.urdf` already exists |
 
 All five are idempotent. `bash install/install.sh` is safe to re-run.
 

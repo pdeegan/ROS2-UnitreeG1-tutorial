@@ -111,12 +111,15 @@ class Speaker(Node):
         return path
 
     def _play(self, wav_path: str) -> None:
+        # sd.wait() blocks the executor for the full clip length, which
+        # makes the node unresponsive to shutdown signals and any other
+        # service call during playback. Start playback and return; the
+        # service caller gets success as soon as the WAV is queued.
         try:
             import sounddevice as sd
             import soundfile as sf
             data, sr = sf.read(wav_path)
-            sd.play(data, sr)
-            sd.wait()
+            sd.play(data, sr)  # non-blocking; sounddevice's PortAudio stream owns the clip
         except Exception as exc:
             self.get_logger().info(f"audio playback skipped ({exc}); wav saved to {wav_path}")
 

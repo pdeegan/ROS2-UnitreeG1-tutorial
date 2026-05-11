@@ -34,12 +34,23 @@ ENV_DISTRO=""
 for cand in "${CANDIDATES[@]}"; do
   if env_works "$cand"; then
     ENV_DIR="$cand"
-    # Detect distro from package list
-    if "$MAMBA_BIN" run -p "$cand" python -c "import rclpy, os; print(os.environ.get('ROS_DISTRO',''))" 2>/dev/null | grep -q .; then
-      ENV_DISTRO="$("$MAMBA_BIN" run -p "$cand" bash -c 'echo $ROS_DISTRO' 2>/dev/null || echo unknown)"
-    fi
-    # Fallback: look at the env name
-    if [[ -z "$ENV_DISTRO" ]]; then
+    # Detect distro by inspecting the env's conda-meta directory — the
+    # RoboStack ros2 base package is named `ros-<distro>-ros-base-*.json`.
+    # `micromamba run` does NOT source the env's activate.d scripts, so
+    # echoing $ROS_DISTRO from a `mamba run bash` returns empty; reading
+    # the package metadata directly is more reliable.
+    detected=""
+    for meta in "$cand"/conda-meta/ros-*-ros-base-*.json; do
+      [[ -e "$meta" ]] || continue
+      base="${meta##*/ros-}"          # jazzy-ros-base-1.2.3-py312_0.json
+      detected="${base%%-ros-base-*}" # jazzy
+      break
+    done
+    if [[ -n "$detected" ]]; then
+      ENV_DISTRO="$detected"
+    else
+      # Last-resort fallback: the env-directory name (case the env was
+      # created by hand with `-n ros2_<distro>`).
       case "$cand" in
         *jazzy*)  ENV_DISTRO="jazzy"  ;;
         *humble*) ENV_DISTRO="humble" ;;

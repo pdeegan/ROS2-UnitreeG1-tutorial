@@ -68,9 +68,18 @@ class G1Bridge(Node):
         try:
             from humanoid_msgs.msg import LowCmd, LowState
         except ImportError as exc:
-            self.get_logger().warn(
-                f"humanoid_msgs not yet built ({exc}); state republishing limited to /g1/imu"
+            # Refuse to start in degraded mode without flagging it loud and
+            # repeatedly. A reader who forgot `colcon build --packages-select
+            # humanoid_msgs` will otherwise see "bridge up" and spend hours
+            # wondering why their /g1/lowcmd publish has no effect.
+            self.get_logger().error(
+                "humanoid_msgs is not built — the bridge cannot accept "
+                "/g1/lowcmd or publish /g1/lowstate. Build it first:"
             )
+            self.get_logger().error(
+                "  bash scripts/ros2_build.sh humanoid_msgs"
+            )
+            self.get_logger().error(f"(import error was: {exc})")
             LowState = None
             LowCmd = None
 
@@ -87,6 +96,15 @@ class G1Bridge(Node):
             )
         else:
             self._cmd_sub = None
+            # Periodic loud reminder so users notice if they leave the bridge
+            # running in this degraded state.
+            self._warn_timer = self.create_timer(10.0, self._warn_no_lowcmd)
+
+    def _warn_no_lowcmd(self) -> None:
+        self.get_logger().warn(
+            "humanoid_msgs missing — /g1/lowcmd subscription is NOT active; "
+            "no command will reach the robot. Build humanoid_msgs and restart."
+        )
 
         self._safety_sub = self.create_subscription(
             Bool, "/g1/safety_engaged", self._on_safety, LATCHED_QOS

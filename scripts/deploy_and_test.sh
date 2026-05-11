@@ -6,7 +6,8 @@
 # commands at the end.
 #
 # Usage:
-#   bash scripts/deploy_and_test.sh                 # fetches G1 URDF (~150 MB) on first run, builds, runs e2e
+#   bash scripts/deploy_and_test.sh                 # full: install + fetch G1 URDF (~150 MB) + build + e2e
+#   bash scripts/deploy_and_test.sh --no-g1         # skip the G1 asset fetch (useful offline / in CI)
 
 set -uo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
@@ -20,20 +21,35 @@ log()  { printf "%s[deploy]%s %s\n" "$GREEN" "$NC" "$*"; }
 warn() { printf "%s[deploy]%s %s\n" "$YELLOW" "$NC" "$*"; }
 fail() { printf "%s[deploy]%s %s\n" "$RED" "$NC" "$*" >&2; }
 
+skip_g1=0
 for arg in "$@"; do
   case "$arg" in
     -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
+    --no-g1|--skip-fetch) skip_g1=1 ;;
+    *) fail "unknown arg: $arg"; exit 2 ;;
   esac
 done
 
 log "step 1/4 — install discovery + pip extras"
-bash install/install.sh 2>&1 | tail -5
+# Tee the full log so the user sees actionable failures from
+# install/02_robostack_ros2.sh (e.g. "set TUTORIAL_INSTALL_ROS=1").
+inst_log=$(mktemp -t deploy_install.XXXXXX.log)
+if bash install/install.sh 2>&1 | tee "$inst_log" | tail -5; then
+  :
+else
+  fail "install.sh failed — full log: $inst_log"
+  exit 1
+fi
 
-# G1 assets are mandatory — the tutorial drives the real G1 URDF.
 g1_present_check="ws/src/g1_description/g1_29dof.urdf"
-if [[ ! -f "$g1_present_check" ]]; then
+if (( skip_g1 )); then
+  log "step 2a/4 — --no-g1 passed; skipping Unitree G1 asset fetch"
+elif [[ ! -f "$g1_present_check" ]]; then
   log "step 2a/4 — fetching Unitree G1 URDF + meshes (~150 MB) from upstream GitHub"
-  bash install/06_fetch_g1_assets.sh
+  if ! bash install/06_fetch_g1_assets.sh; then
+    warn "G1 asset fetch failed (offline? rate-limited?); continuing without G1 sim."
+    warn "  re-run later with: bash install/06_fetch_g1_assets.sh"
+  fi
 else
   log "step 2a/4 — G1 assets already present, skipping fetch"
 fi
@@ -41,8 +57,10 @@ fi
 log "step 2/4 — colcon build"
 bash scripts/ros2_build.sh 2>&1 | tail -3
 
-log "step 3/4 — full e2e test (with G1 sim verification)"
-if bash tests/integration/full_e2e.sh; then
+log "step 3/4 — full e2e test"
+e2e_args=()
+(( skip_g1 )) && e2e_args+=("--skip-fetch")
+if bash tests/integration/full_e2e.sh "${e2e_args[@]}"; then
   log "step 4/4 — all tests green"
 else
   fail "e2e failed — see /tmp/e2e_*.log"
