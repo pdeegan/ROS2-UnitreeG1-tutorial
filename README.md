@@ -1,9 +1,26 @@
 # ROS 2 for Humanoids — a hands-on tutorial
 
+> Nine self-contained lessons climbing from a one-node "hello" to a
+> Unitree G1 humanoid bridge with a structural safety latch. Runs on
+> WSL2 + NVIDIA, native Linux, or macOS — no Docker, no robot
+> required.
+
+[![ci](https://github.com/pdeegan/ROS2-UnitreeG1-tutorial/actions/workflows/ci.yml/badge.svg)](https://github.com/pdeegan/ROS2-UnitreeG1-tutorial/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![ROS 2: Jazzy or Humble](https://img.shields.io/badge/ROS%202-Jazzy%20%7C%20Humble-22314e.svg)](https://docs.ros.org/)
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776ab.svg)](https://www.python.org/)
+[![Unitree G1](https://img.shields.io/badge/Robot-Unitree%20G1-ff7f00.svg)](https://www.unitree.com/g1)
+
+<p align="center">
+  <img src="docs/screenshots/g1_wave.png" alt="Unitree G1 in rviz2 waving" width="640">
+</p>
+
 A self-contained, end-to-end tutorial for ROS 2 (Jazzy / Humble)
-targeting a **Unitree G1** humanoid, built for **Debian 13 (trixie)
-WSL2 + NVIDIA discrete GPU**. Starts from a one-node "hello" and
-climbs to real humanoid control: voice in, motion out.
+targeting a **Unitree G1** humanoid, built and verified on **Debian 13
+(trixie) WSL2 + NVIDIA discrete GPU** but designed to work on any
+Linux + Python 3.11/3.12 host (and macOS, with caveats noted in
+[install/INSTALL.md](install/INSTALL.md)). Starts from a one-node
+"hello" and climbs to real humanoid control: voice in, motion out.
 
 This is **infrastructure for learning**, not a robot stack. Read the
 code, edit the code, and break it on purpose.
@@ -265,9 +282,19 @@ The bridge package refuses to publish `lowcmd` while
 `/g1/safety_engaged` is false. Do not patch around it.
 
 
-## Source
+## License
 
-Tutorial body and code are MIT-licensed for the project author.
-ROS 2 packages are Apache 2.0 (upstream). Unitree SDK Python
-bindings are under their upstream license; install pulls them
-from PyPI / source.
+Tutorial code and prose are MIT-licensed — see [LICENSE](LICENSE).
+ROS 2 packages are Apache 2.0 upstream. Unitree SDK Python bindings
+and the G1 URDF + meshes from
+[`unitreerobotics/unitree_ros`](https://github.com/unitreerobotics/unitree_ros)
+ship under their own licenses; the install scripts pull them from
+the upstream sources and leave their license files in place.
+
+## Reporting issues
+
+- **Bugs or unclear lessons** — open a GitHub issue (templates available).
+- **Safety-impacting bugs** (motion without latch consent, forged
+  lowcmd, etc.) — please report privately first, see [SECURITY.md](SECURITY.md).
+- **Contributing** — see [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Code of conduct** — [Contributor Covenant v2.1](CODE_OF_CONDUCT.md).

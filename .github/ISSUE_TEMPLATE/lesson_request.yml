@@ -1,0 +1,37 @@
+name: Lesson request
+description: Propose a new lesson or expansion to an existing one.
+labels: ["lesson", "enhancement"]
+body:
+  - type: input
+    id: concept
+    attributes:
+      label: What concept would this teach?
+      description: One sentence. A lesson with no concept is a code dump.
+      placeholder: "e.g. how parameter callbacks work and when to use them"
+    validations:
+      required: true
+  - type: textarea
+    id: failure_mode
+    attributes:
+      label: What failure mode does it prevent?
+      description: "A reader who skips this lesson would later get bitten by …"
+      placeholder: "Reader assumes ros2 param set takes effect immediately; their controller silently keeps the old gains."
+    validations:
+      required: true
+  - type: textarea
+    id: smallest_version
+    attributes:
+      label: What's the smallest version of this?
+      description: Tutorials drown in completeness. What would the minimal demonstration look like?
+    validations:
+      required: true
+  - type: dropdown
+    id: needs_robot
+    attributes:
+      label: Does this require the real G1?
+      options:
+        - "No — sim only"
+        - "Yes — needs a physical G1 connected"
+        - "Optional — works in both modes"
+    validations:
+      required: true

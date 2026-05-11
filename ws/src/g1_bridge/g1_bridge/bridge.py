@@ -100,12 +100,6 @@ class G1Bridge(Node):
             # running in this degraded state.
             self._warn_timer = self.create_timer(10.0, self._warn_no_lowcmd)
 
-    def _warn_no_lowcmd(self) -> None:
-        self.get_logger().warn(
-            "humanoid_msgs missing — /g1/lowcmd subscription is NOT active; "
-            "no command will reach the robot. Build humanoid_msgs and restart."
-        )
-
         self._safety_sub = self.create_subscription(
             Bool, "/g1/safety_engaged", self._on_safety, LATCHED_QOS
         )
@@ -116,6 +110,12 @@ class G1Bridge(Node):
         mode = "FAKE" if fake_mode() else "LIVE"
         self.get_logger().info(
             f"bridge up [{mode}] iface={iface or '<auto>'} — safety DISENGAGED"
+        )
+
+    def _warn_no_lowcmd(self) -> None:
+        self.get_logger().warn(
+            "humanoid_msgs missing — /g1/lowcmd subscription is NOT active; "
+            "no command will reach the robot. Build humanoid_msgs and restart."
         )
 
     # ------------------------------------------------------------ state path

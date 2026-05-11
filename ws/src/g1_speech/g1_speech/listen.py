@@ -76,9 +76,12 @@ class VoiceListener(Node):
             return
 
         # Real mode: lazy-import audio + VAD deps so the package imports
-        # cleanly in environments where they aren't present.
+        # cleanly in environments where they aren't present. importlib
+        # (rather than `import sounddevice`) keeps pyflakes from flagging
+        # the probe as an unused import.
+        import importlib
         try:
-            import sounddevice  # noqa: F401
+            importlib.import_module("sounddevice")
         except ImportError as exc:
             self.get_logger().error(
                 f"sounddevice unavailable ({exc}). Install: pip install sounddevice."

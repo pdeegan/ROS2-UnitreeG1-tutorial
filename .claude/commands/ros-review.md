@@ -5,7 +5,7 @@ allowed-tools: Bash, Read, Agent
 model: inherit
 ---
 
-Five-way parallel review of the diff against `$1` (default `main`).
+Four-way parallel review of the diff against `$1` (default `main`).
 
 Capture the diff first:
 

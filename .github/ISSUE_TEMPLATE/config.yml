@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Safety vulnerability (private)
+    url: https://github.com/pdeegan/ROS2-UnitreeG1-tutorial/security/advisories/new
+    about: Report a safety-impacting issue privately. See SECURITY.md for what counts.
+  - name: Question or discussion
+    url: https://github.com/pdeegan/ROS2-UnitreeG1-tutorial/discussions
+    about: Ask a how-do-I or share what you built — discussions, not issues.

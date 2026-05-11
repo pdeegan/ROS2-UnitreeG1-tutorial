@@ -1,0 +1,48 @@
+name: Bug report
+description: A lesson, install step, or G1 bridge path doesn't work as documented.
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. The more reproducible
+        you can make this, the faster it gets fixed.
+  - type: input
+    id: lesson
+    attributes:
+      label: Which lesson / package?
+      placeholder: "e.g. tutorial_lifecycle, g1_bridge, install/02_robostack_ros2.sh"
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: What did you run, and what did you see?
+      placeholder: |
+        $ bash scripts/ros2_build.sh humanoid_msgs
+        … (paste the failing output)
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: From the README / walkthrough / docstring.
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: Output of `bash scripts/doctor.sh` is ideal. Otherwise OS + WSL2 yes/no + Python + ROS distro.
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety
+      options:
+        - label: This bug could allow motion commands to reach the robot with the safety latch disengaged. (If checked, please report privately via SECURITY.md instead.)
+          required: false

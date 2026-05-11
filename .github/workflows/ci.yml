@@ -1,0 +1,171 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Concurrency: cancel in-flight runs when a new commit lands on the same ref.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shell-lint:
+    name: shellcheck install + scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update -qq && sudo apt-get install -y shellcheck
+      - name: Lint shell scripts
+        run: |
+          set -euo pipefail
+          # Exclude .discovered.sh (sourced per-machine state, gitignored
+          # but still gets matched by the glob if a CI runner has one).
+          mapfile -t scripts < <(find install scripts tests/integration .claude/scripts \
+            -type f \( -name '*.sh' -o -name '*.bash' \) \
+            -not -name '.discovered.sh' 2>/dev/null)
+          if (( ${#scripts[@]} == 0 )); then
+            echo "no shell scripts found — nothing to lint"; exit 0
+          fi
+          # SC1091: don't try to follow `source` into RoboStack-managed files
+          # SC2034: tolerate locally-unused color/log vars in helper scripts
+          # SC2164: tolerate `cd ...` without `|| exit` (set -e covers it)
+          # SC2010: tolerate `ls | grep` in cleanup scripts (the readable form)
+          # SC2221: tolerate overlapping case patterns in OS detection
+          # SC2222: same as above
+          shellcheck --severity=warning \
+            --exclude=SC1091,SC2034,SC2164,SC2010,SC2221,SC2222 \
+            "${scripts[@]}"
+
+  python-lint:
+    name: pyflakes + py_compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install lint tools
+        run: pip install --quiet pyflakes
+      - name: pyflakes
+        run: |
+          set -euo pipefail
+          # pyflakes catches unused imports, undefined names, redefined functions.
+          # We pass --target-version=3.10 implicitly (pyflakes is version-agnostic).
+          find ws/src tests -name '*.py' -print0 | xargs -0 pyflakes
+      - name: py_compile (syntax)
+        run: |
+          set -euo pipefail
+          find ws/src tests -name '*.py' -print0 | xargs -0 python -m py_compile
+
+  pytest-no-ros:
+    name: pytest (no ROS env — import structure only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pytest
+        run: pip install --quiet pytest pytest-timeout
+      - name: Run pytest
+        run: |
+          set -euo pipefail
+          # Without rclpy installed, every test must skip cleanly via
+          # pytest.importorskip("rclpy"). The job is green if no tests
+          # raise unexpected errors during collection.
+          pytest tests/test_imports.py tests/test_lessons.py -v --timeout=30 || {
+            rc=$?
+            if [[ $rc -eq 5 ]]; then
+              # exit code 5 = no tests collected (all skipped). That's the
+              # expected outcome without rclpy on the CI runner.
+              echo "all tests skipped (no rclpy on CI runner) — OK"
+              exit 0
+            fi
+            exit $rc
+          }
+
+  walkthrough-html-validity:
+    name: walkthrough HTML smoke (links, structure)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Structural smoke test
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import json, re, pathlib, sys
+          html = pathlib.Path("docs/walkthrough.html").read_text()
+          # Every in-page anchor must resolve to a real id in the same file.
+          anchors = set(re.findall(r'href="#([^"]+)"', html))
+          ids = set(re.findall(r'id="([^"]+)"', html))
+          missing = sorted(anchors - ids)
+          if missing:
+              print("sidebar anchors with no target:", missing)
+              sys.exit(1)
+          # Reference index must be valid JSON.
+          m = re.search(r'<script type="application/json" id="reference-index">\s*(\[.*?\])\s*</script>', html, re.S)
+          assert m, "reference-index <script> not found"
+          json.loads(m.group(1))  # must parse
+          print("walkthrough HTML: sidebar anchors resolve, reference-index JSON is valid")
+          PY
+
+  markdown-link-check:
+    name: markdown link sanity (relative paths only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check intra-repo links
+        run: |
+          python <<'PY'
+          import pathlib, re, sys
+          targets = [
+              "README.md", "CONTRIBUTING.md", "CHANGELOG.md",
+              "SECURITY.md", "CODE_OF_CONDUCT.md",
+          ] + [str(p) for p in pathlib.Path("docs").glob("*.md")] \
+            + [str(p) for p in pathlib.Path("install").glob("*.md")]
+
+          # [text](target) — markdown link, captured only outside fenced
+          # code blocks so example snippets don't trip the checker.
+          LINK = re.compile(r'\[([^\]]+)\]\(([^)]+)\)')
+          FENCE = re.compile(r'^\s*```')
+
+          broken = []
+          for src in targets:
+              p = pathlib.Path(src)
+              if not p.exists():
+                  continue
+              in_fence = False
+              for lineno, line in enumerate(p.read_text().splitlines(), 1):
+                  if FENCE.match(line):
+                      in_fence = not in_fence
+                      continue
+                  if in_fence:
+                      continue
+                  for _, target in LINK.findall(line):
+                      # strip any anchor and leading ./
+                      bare = target.split("#", 1)[0].lstrip("./").strip()
+                      if not bare:
+                          continue
+                      if bare.startswith(("http://", "https://", "mailto:")):
+                          continue
+                      full = (p.parent / bare).resolve()
+                      if not full.exists():
+                          broken.append(f"{src}:{lineno} → {target}")
+          if broken:
+              print("broken intra-repo markdown links:")
+              for b in broken:
+                  print(" ", b)
+              sys.exit(1)
+          print("all intra-repo markdown links resolve")
+          PY
