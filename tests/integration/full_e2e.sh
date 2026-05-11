@@ -390,21 +390,32 @@ sleep 1
 # Use --topics flag (positional form is deprecated in newer rosbag2 and
 # may silently record nothing). Use SIGINT, not the default SIGTERM —
 # rosbag2 needs SIGINT to flush metadata.yaml on shutdown. Add
-# --kill-after=2 so a hung bag dies in bounded time.
+# --kill-after=4 so a hung bag dies in bounded time, but give rosbag2
+# enough headroom to flush the cache after SIGINT (it can take >1 s).
+#
+# Each attempt APPENDS to bag_rec.log (>>) so on failure we see what
+# happened in both attempts, not just the second.
 bag_ok=0
-for attempt_window in 2 4; do
+: > /tmp/e2e_bag_rec.log     # truncate at start of phase
+for attempt_window in 3 5; do
+  # Make absolutely sure no previous bag-record process is still alive
+  # holding sockets — a half-killed one will starve the next attempt.
+  pkill -KILL -f 'ros2 bag record' 2>/dev/null || true
   rm -rf /tmp/e2e_bags/rt
+  echo ">>> attempt window=${attempt_window}s @ $(date +%H:%M:%S)" >> /tmp/e2e_bag_rec.log
   ( cd /tmp/e2e_bags && \
-    timeout -s INT --kill-after=2 "$attempt_window" \
+    timeout -s INT --kill-after=4 "$attempt_window" \
        ros2 bag record -o rt --topics /joint_states /tf \
-       > "/tmp/e2e_bag_rec.log" 2>&1 || true )
-  # Brief finalize wait after SIGINT.
-  sleep 0.4
+       >> /tmp/e2e_bag_rec.log 2>&1 || true )
+  # Wait for rosbag2 to flush metadata.yaml — it logs "may take a while".
+  for _ in $(seq 1 15); do
+    [[ -f /tmp/e2e_bags/rt/metadata.yaml ]] && break
+    sleep 0.2
+  done
   if [[ -f /tmp/e2e_bags/rt/metadata.yaml ]]; then
     bag_ok=1; break
   fi
-  # Tiny pause before the longer retry.
-  sleep 0.5
+  echo "<<< attempt failed; retrying" >> /tmp/e2e_bag_rec.log
 done
 
 if (( bag_ok == 1 )); then
