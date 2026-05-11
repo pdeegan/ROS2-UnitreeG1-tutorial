@@ -8,7 +8,7 @@
 
 # Audio I/O for g1_speech (microphone capture, file I/O)
 sounddevice>=0.4.6
-soundfile>=0.12
+soundfile>=0.13.1
 
 # ONNX runtime for the Silero VAD model. Swap for onnxruntime-gpu
 # on the 4090 if you want CUDA — ~10x faster on long streams.
