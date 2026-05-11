@@ -273,56 +273,49 @@ else
 fi
 
 # ────────────────────────────────────────────────────────────────────
-step "Phase 5 — sim humanoid launches and publishes /joint_states + /tf"
+step "Phase 5 — Unitree G1 sim launches and publishes /joint_states + /tf"
 
-# Toy URDF
-launch_and_check "sim_toy_joint_states" \
-  "ros2 launch tutorial_sim sim.launch.py rviz:=false" \
-  "/joint_states" \
-  1.0
-cleanup_phase
-
-# Verify the pattern parameter works
-ros2 launch tutorial_sim sim.launch.py rviz:=false > /tmp/e2e_pattern.log 2>&1 &
-LPID=$!
-# Wait for the node to register before talking to it
-for _ in $(seq 1 30); do
-  if ros2 node list 2>/dev/null | grep -q joint_animator; then break; fi
-  sleep 0.2
-done
-
-if ros2 param get /joint_animator pattern 2>&1 | grep -q wave; then
-  ok "joint_animator default pattern is 'wave'"
-else
-  fail "joint_animator pattern get failed (log: /tmp/e2e_pattern.log)"
-fi
-
-if ros2 param set /joint_animator pattern walk > /dev/null 2>&1 \
-   && [[ "$(ros2 param get /joint_animator pattern 2>/dev/null | tail -1)" == *walk* ]]; then
-  ok "ros2 param set pattern=walk applied"
-else
-  fail "ros2 param set pattern failed"
-fi
-
-kill -TERM $LPID 2>/dev/null; wait $LPID 2>/dev/null
-cleanup_phase
-
-# G1 URDF (only if assets present). Upstream layout puts URDFs at
-# the top level of g1_description/ — no urdf/ subfolder.
 g1_built_top="ws/install/g1_description/share/g1_description/g1_29dof.urdf"
 g1_built_sub="ws/install/g1_description/share/g1_description/urdf/g1_29dof.urdf"
 g1_src_top="ws/src/g1_description/g1_29dof.urdf"
 g1_src_sub="ws/src/g1_description/urdf/g1_29dof.urdf"
+
 if [[ -f "$g1_built_top" || -f "$g1_built_sub" ]]; then
   launch_and_check "sim_g1_joint_states" \
     "ros2 launch tutorial_sim g1_sim.launch.py rviz:=false" \
     "/joint_states" \
     1.5
   cleanup_phase
+
+  # Verify the pattern parameter switches the animation pattern at runtime
+  ros2 launch tutorial_sim g1_sim.launch.py rviz:=false > /tmp/e2e_pattern.log 2>&1 &
+  LPID=$!
+  for _ in $(seq 1 30); do
+    ros2 node list 2>/dev/null | grep -q joint_animator && break
+    sleep 0.2
+  done
+
+  if ros2 param get /joint_animator pattern 2>&1 | grep -q wave; then
+    ok "joint_animator default pattern is 'wave'"
+  else
+    fail "joint_animator pattern get failed (log: /tmp/e2e_pattern.log)"
+  fi
+
+  if ros2 param set /joint_animator pattern walk > /dev/null 2>&1 \
+     && [[ "$(ros2 param get /joint_animator pattern 2>/dev/null | tail -1)" == *walk* ]]; then
+    ok "ros2 param set pattern=walk applied"
+  else
+    fail "ros2 param set pattern failed"
+  fi
+
+  kill -INT $LPID 2>/dev/null
+  ( sleep 1.5 && kill -KILL $LPID 2>/dev/null ) &
+  wait $LPID 2>/dev/null
+  cleanup_phase
 elif [[ -f "$g1_src_top" || -f "$g1_src_sub" ]]; then
   fail "g1_description in src/ but not built — run bash scripts/ros2_build.sh g1_description"
 else
-  skip "G1 URDF launch (assets not fetched)"
+  skip "G1 URDF launch (run install/06_fetch_g1_assets.sh first)"
 fi
 
 # ────────────────────────────────────────────────────────────────────
@@ -387,7 +380,7 @@ mkdir -p /tmp/e2e_bags
 rm -rf /tmp/e2e_bags/rt
 
 # Producer: sim humanoid, headless
-ros2 launch tutorial_sim sim.launch.py rviz:=false > /tmp/e2e_sim_for_bag.log 2>&1 &
+ros2 launch tutorial_sim g1_sim.launch.py rviz:=false > /tmp/e2e_sim_for_bag.log 2>&1 &
 SIMPID=$!
 
 # Wait for /joint_states to APPEAR on the topic list (~6 s max).

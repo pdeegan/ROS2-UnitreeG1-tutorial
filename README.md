@@ -21,9 +21,11 @@ That breaks the moment you sit at a Debian trixie WSL prompt with a
   the small audio extras on top — no 3.5 GB re-download.
 - A **colcon workspace** wired and ready: lessons + sim humanoid +
   G1 bridge packages share `ws/`.
-- A **real Unitree G1 URDF** path (opt-in, ~150 MB sparse-clone of
+- The **real Unitree G1 URDF** (~150 MB sparse-clone of
   [`unitreerobotics/unitree_ros`](https://github.com/unitreerobotics/unitree_ros))
-  drives the same animator that drove the toy humanoid in lesson 06b.
+  is fetched on first run and rendered in rviz2 — 41 links, 165 STL
+  meshes, 29 joints driven through wave / walk / squat / tpose /
+  stretch patterns by `tutorial_sim`.
 - A **beautiful single-file HTML walkthrough** at
   [docs/walkthrough.html](docs/walkthrough.html) — ELI5 intro, every
   CLI tool demoed, every lesson explained, no CDN.
@@ -68,14 +70,20 @@ The fastest path from a fresh checkout to a fully-working,
 ready-to-demo system:
 
 ```bash
-bash scripts/deploy_and_test.sh                # toy URDF (lightweight)
-bash scripts/deploy_and_test.sh --with-g1      # also pulls real Unitree G1 URDF (~150 MB)
+bash scripts/deploy_and_test.sh
 ```
 
-That single script runs `install/install.sh` → `scripts/ros2_build.sh`
-→ `tests/integration/full_e2e.sh`, then opens the walkthrough in your
-default browser via `wslview` / `xdg-open`. Prints next-step
-commands at the end.
+The script:
+
+1. Runs `install/install.sh` (idempotent — discovers existing
+   micromamba + ROS 2 env, adds only the missing pip extras).
+2. **Auto-fetches the Unitree G1 URDF + meshes** from
+   [`unitreerobotics/unitree_ros`](https://github.com/unitreerobotics/unitree_ros)
+   if not already present (~150 MB, one-time).
+3. Builds the workspace with `scripts/ros2_build.sh`.
+4. Runs the full e2e (`tests/integration/full_e2e.sh`).
+5. Opens the walkthrough in your default browser
+   (`wslview` / `open` / `xdg-open` — cross-OS).
 
 If you only want to **verify** an already-installed setup:
 
@@ -89,8 +97,7 @@ Exit code 0 = everything works. The script picks an isolated
 
 | Variant | When to use |
 |---|---|
-| `bash scripts/deploy_and_test.sh` | **First time on a new box** — install + build + test + open browser |
-| `bash scripts/deploy_and_test.sh --with-g1` | Same, plus the real Unitree G1 URDF |
+| `bash scripts/deploy_and_test.sh` | **First time on a new box** — install + auto-fetch G1 URDF + build + test + open browser |
 | `bash tests/integration/full_e2e.sh` | Verify an existing install (skips network) |
 | `bash tests/integration/full_e2e.sh --quick` | Skip per-lesson runs (~30 s) |
 | `bash tests/integration/full_e2e.sh --fetch-g1` | Re-pull + re-build the G1 URDF |
@@ -109,15 +116,14 @@ to confirm the visual side works:
 ```bash
 source scripts/ros2_env.sh
 
-bash scripts/tools/sim_up.sh           # rviz2 with the toy humanoid
-bash scripts/tools/rqt_graph.sh        # live topic graph window
-bash scripts/tools/rqt_plot.sh /joint_states/position[0]
-bash scripts/tools/inspect.sh          # CLI snapshot of every node/topic
-
-# After fetching the real G1 URDF:
-bash install/06_fetch_g1_assets.sh
-bash scripts/ros2_build.sh g1_description
-bash scripts/tools/sim_up.sh g1        # rviz2 with the actual G1
+bash scripts/tools/sim_up.sh                 # rviz2 with the Unitree G1 (wave)
+bash scripts/tools/sim_up.sh walk            # walking gait
+bash scripts/tools/sim_up.sh squat           # squat cycle
+bash scripts/tools/sim_up.sh tpose           # T-pose calibration
+bash scripts/tools/sim_up.sh stretch         # full-body rotation
+bash scripts/tools/rqt_graph.sh              # live topic graph window
+bash scripts/tools/rqt_plot.sh /joint_states/position[15]  # plot left_shoulder_pitch_joint
+bash scripts/tools/inspect.sh                # CLI snapshot of every node/topic
 ```
 
 ---
@@ -172,7 +178,7 @@ ROS_tutorial/
 │   ├── lesson_new.sh          # scaffold a new ament_python lesson
 │   ├── doctor.sh              # diagnostic report
 │   └── tools/                 # one-line wrappers for every standard ROS 2 tool
-│       ├── sim_up.sh                         # humanoid URDF + rviz2 (toy or G1)
+│       ├── sim_up.sh                         # Unitree G1 in rviz2
 │       ├── rqt_graph.sh / rqt_plot.sh        # GUI inspectors
 │       ├── bag_record.sh / bag_play.sh       # record + replay
 │       └── inspect.sh                        # one-shot system snapshot
@@ -207,7 +213,7 @@ colcon package under `ws/src/`.
 | 04 | `tutorial_actions` | Actions for long-running goals (motion) |
 | 05 | `tutorial_lifecycle` | Managed nodes — safety-critical lifecycle |
 | 06 | `tutorial_tf` | TF2, URDF, robot_state_publisher |
-| ▸ | `tutorial_sim` | Simulated humanoid in rviz2 — URDF + animator + launch + bag |
+| ▸ | `tutorial_sim` | Drives the Unitree G1 URDF in rviz2 — 29 joints animated |
 | ▸ | (toolkit) | Every CLI + rqt + rosbag, demoed on the sim humanoid |
 | ▸ | `g1_description` | Real Unitree G1 URDF + meshes (sparse-cloned from upstream) |
 | 07 | `g1_bridge` | DDS ↔ ROS 2 bridge for Unitree state + cmd |
@@ -217,8 +223,8 @@ colcon package under `ws/src/`.
 **Hands-on demos with no extra code** (bring up another shell after `source scripts/ros2_env.sh`):
 
 ```bash
-bash scripts/tools/sim_up.sh           # toy humanoid in rviz2
-bash scripts/tools/sim_up.sh g1        # real Unitree G1 (after fetching assets)
+bash scripts/tools/sim_up.sh                  # Unitree G1 in rviz2
+bash scripts/tools/sim_up.sh walk             # any pattern: wave|walk|squat|tpose|stretch
 bash scripts/tools/inspect.sh          # snapshot of every node/topic/service
 bash scripts/tools/rqt_graph.sh        # live topic graph viewer
 bash scripts/tools/rqt_plot.sh /joint_states/position[0]

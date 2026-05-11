@@ -11,7 +11,7 @@ def _data_files() -> list:
          ["resource/" + package_name]),
         ("share/" + package_name, ["package.xml"]),
     ]
-    for sub in ("urdf", "launch", "rviz", "config"):
+    for sub in ("launch", "rviz", "config"):
         if not os.path.isdir(sub):
             continue
         items = [os.path.join(sub, f) for f in os.listdir(sub)

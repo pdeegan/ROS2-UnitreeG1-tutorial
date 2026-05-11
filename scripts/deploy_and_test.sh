@@ -21,10 +21,8 @@ log()  { printf "%s[deploy]%s %s\n" "$GREEN" "$NC" "$*"; }
 warn() { printf "%s[deploy]%s %s\n" "$YELLOW" "$NC" "$*"; }
 fail() { printf "%s[deploy]%s %s\n" "$RED" "$NC" "$*" >&2; }
 
-WITH_G1=0
 for arg in "$@"; do
   case "$arg" in
-    --with-g1) WITH_G1=1 ;;
     -h|--help) sed -n '2,15p' "$0"; exit 0 ;;
   esac
 done
@@ -32,35 +30,34 @@ done
 log "step 1/4 — install discovery + pip extras"
 bash install/install.sh 2>&1 | tail -5
 
-if (( WITH_G1 == 1 )); then
-  log "step 2a/4 — fetching real Unitree G1 URDF (~150 MB) from upstream GitHub"
-  bash install/06_fetch_g1_assets.sh 2>&1 | tail -5
+# G1 assets are mandatory — the tutorial drives the real G1 URDF.
+g1_present_check="ws/src/g1_description/g1_29dof.urdf"
+if [[ ! -f "$g1_present_check" ]]; then
+  log "step 2a/4 — fetching Unitree G1 URDF + meshes (~150 MB) from upstream GitHub"
+  bash install/06_fetch_g1_assets.sh
+else
+  log "step 2a/4 — G1 assets already present, skipping fetch"
 fi
 
 log "step 2/4 — colcon build"
 bash scripts/ros2_build.sh 2>&1 | tail -3
 
-log "step 3/4 — full e2e test"
-e2e_args=( --skip-fetch )
-(( WITH_G1 == 1 )) && e2e_args=( --fetch-g1 )
-if bash tests/integration/full_e2e.sh "${e2e_args[@]}"; then
+log "step 3/4 — full e2e test (with G1 sim verification)"
+if bash tests/integration/full_e2e.sh; then
   log "step 4/4 — all tests green"
 else
   fail "e2e failed — see /tmp/e2e_*.log"
   exit 1
 fi
 
-# Try to open the walkthrough in the system browser
+# Open the walkthrough in the host's default browser, cross-OS.
 URL="file://$REPO_ROOT/docs/walkthrough.html"
-if command -v wslview >/dev/null 2>&1; then
-  log "opening walkthrough in your Windows browser via wslview"
-  wslview "$URL" 2>/dev/null || true
-elif command -v xdg-open >/dev/null 2>&1; then
-  log "opening walkthrough via xdg-open"
-  xdg-open "$URL" >/dev/null 2>&1 || true
+# shellcheck source=../install/_os.sh
+source "$REPO_ROOT/install/_os.sh"
+if tutorial_open_url "$URL" 2>/dev/null; then
+  log "opened walkthrough: $URL"
 else
-  log "open the walkthrough manually:"
-  log "  $URL"
+  log "open the walkthrough manually: $URL"
 fi
 
 cat <<EOF
@@ -71,27 +68,14 @@ ${GREEN}════════════════════════
   1) Activate the env in any new shell:
        source scripts/ros2_env.sh
 
-  2) Bring up the toy humanoid in rviz2:
-       bash scripts/tools/sim_up.sh
+  2) Bring up the Unitree G1 in rviz2:
+       bash scripts/tools/sim_up.sh              # default: wave
+       bash scripts/tools/sim_up.sh walk         # walking gait
+       bash scripts/tools/sim_up.sh squat        # squat cycle
+       bash scripts/tools/sim_up.sh tpose        # T-pose
+       bash scripts/tools/sim_up.sh stretch      # full-body rotation
 
-EOF
-if (( WITH_G1 == 1 )); then
-  cat <<EOF
-  3) Bring up the REAL Unitree G1 in rviz2:
-       bash scripts/tools/sim_up.sh g1
-
-EOF
-else
-  cat <<EOF
-  3) (Optional) fetch the real Unitree G1 URDF for a richer demo:
-       bash install/06_fetch_g1_assets.sh
-       bash scripts/ros2_build.sh g1_description
-       bash scripts/tools/sim_up.sh g1
-
-EOF
-fi
-cat <<EOF
-  4) Open the walkthrough:
+  3) Open the walkthrough:
        $URL
 ${GREEN}═══════════════════════════════════════════════${NC}
 

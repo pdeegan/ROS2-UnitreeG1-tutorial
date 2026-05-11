@@ -1,7 +1,22 @@
-# Install guide — Debian 13 (trixie) WSL2 + NVIDIA discrete GPU
+# Install guide — Debian / Ubuntu / macOS (incl. WSL2)
 
 This guide explains *why* the install is shaped the way it is so you can
 debug it when it bites.
+
+## Supported platforms
+
+| Platform | Status | Package manager | Notes |
+|---|---|---|---|
+| Debian 13 (trixie) WSL2 | ✅ reference (35/35 e2e green) | apt | The dev box this was built on. NVIDIA passthrough verified. |
+| Debian 12 (bookworm) | ✅ should work | apt | Same install path as trixie. |
+| Ubuntu 22.04 / 24.04 | ✅ should work | apt | RoboStack works; native `apt install ros-jazzy-desktop` is also a valid alternative. |
+| Ubuntu 22.04 / 24.04 WSL2 | ✅ should work | apt | Same as native Ubuntu plus `/dev/dxg` GPU passthrough. |
+| Fedora / RHEL / Rocky | ⚠️ untested but covered | dnf | `00_prereqs.sh` handles dnf; rest is OS-agnostic via micromamba. |
+| macOS Apple Silicon (arm64) | ⚠️ supported, untested on this build | brew | RoboStack ships `osx-arm64` binaries. CUDA paths skip; rviz2 uses native Qt. |
+| macOS Intel (x86_64) | ⚠️ supported, untested on this build | brew | RoboStack ships `osx-64` binaries. |
+
+`install/_os.sh` auto-detects the platform; every install script branches accordingly.
+On macOS you need [Homebrew](https://brew.sh) before running `00_prereqs.sh`.
 
 ---
 

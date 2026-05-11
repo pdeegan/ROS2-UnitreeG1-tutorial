@@ -13,8 +13,8 @@
 #   bash install/06_fetch_g1_assets.sh   # network — pulls ~150 MB
 #   bash scripts/ros2_build.sh g1_description
 #
-# Or skip entirely — the toy URDF in tutorial_sim/urdf/humanoid.urdf.xacro
-# works for every lesson except the "real G1 in rviz" demo.
+# Mandatory for tutorial_sim — without these assets, sim_up.sh and the
+# G1 launch file have nothing to render.
 set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

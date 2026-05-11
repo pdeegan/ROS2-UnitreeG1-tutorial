@@ -26,10 +26,17 @@ if [[ -n "$MAMBA_BIN" ]]; then
 else
   log "no micromamba found in standard locations — bootstrapping into repo"
   ARCH="$(uname -m)"
-  case "$ARCH" in
-    x86_64)  PLATFORM="linux-64"      ;;
-    aarch64) PLATFORM="linux-aarch64" ;;
-    *) echo "unsupported arch: $ARCH" >&2; exit 1 ;;
+  KERNEL="$(uname -s)"
+  case "$KERNEL:$ARCH" in
+    Linux:x86_64)   PLATFORM="linux-64"      ;;
+    Linux:aarch64)  PLATFORM="linux-aarch64" ;;
+    Linux:ppc64le)  PLATFORM="linux-ppc64le" ;;
+    Darwin:x86_64)  PLATFORM="osx-64"        ;;
+    Darwin:arm64)   PLATFORM="osx-arm64"     ;;
+    *)
+      echo "[01_micromamba] unsupported platform: $KERNEL/$ARCH" >&2
+      echo "[01_micromamba] supported: linux-{x86_64,aarch64,ppc64le}, macOS-{x86_64,arm64}" >&2
+      exit 1 ;;
   esac
   MAMBA_BIN="$REPO_ROOT/.micromamba/bin/micromamba"
   mkdir -p "$(dirname "$MAMBA_BIN")"

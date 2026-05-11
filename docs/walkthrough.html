@@ -106,6 +106,27 @@ section.lesson ul, section.lesson ol { padding-left: 1.4rem; }
 section.lesson li { margin: .25rem 0; }
 section.lesson strong { color: var(--accent); }
 section.lesson em { color: var(--ink-dim); font-style: italic; }
+section.lesson figure.shot {
+  margin: 1.25rem 0;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: .75rem;
+}
+section.lesson figure.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+section.lesson figure.shot figcaption {
+  margin-top: .55rem;
+  font-size: .82rem;
+  color: var(--ink-dim);
+  text-align: center;
+  font-style: italic;
+}
 section.lesson p.hint {
   margin: -.25rem 0 .75rem 0;
   padding: .35rem .6rem;
@@ -583,22 +604,48 @@ If you ever lose track of the env state, <code>bash scripts/doctor.sh</code> dum
 <section class="lesson" id="first">
 <header>
   <div class="crumb">▸ first robot</div>
-  <h2>Bring up a humanoid in rviz2 — your first ROS 2 robot</h2>
-  <p class="summary">A six-joint humanoid in 3D, animated in real time. Topics, services, and parameters all visible at once. Drive it before you write a line of code.</p>
+  <h2>Bring up the Unitree G1 in rviz2 — your first ROS 2 robot</h2>
+  <p class="summary">The actual Unitree G1 URDF — 41 links, 165 STL meshes, 29 driven joints. Topics, services, and parameters all visible at once. Drive it before you write a line of code.</p>
 </header>
 
-<p>The package <code>tutorial_sim</code> brings up a toy humanoid: torso + head + two arms + two legs as URDF primitives. It's the lightest possible sim that's still a real ROS 2 robot — no physics, just kinematics. Three nodes come up via one launch file:</p>
+<p>The package <code>tutorial_sim</code> brings up the real Unitree G1 URDF (vendored from <a href="https://github.com/unitreerobotics/unitree_ros"><code>unitreerobotics/unitree_ros</code></a> — same model used in mujoco_ros and the official ROS 2 stack). Three nodes come up via one launch file:</p>
 <ul>
   <li><strong><code>robot_state_publisher</code></strong> — reads the URDF, republishes each link's transform on the TF tree given the current <code>/joint_states</code>.</li>
-  <li><strong><code>joint_animator</code></strong> — publishes <code>/joint_states</code> at 30 Hz with one of three patterns (<code>wave</code>, <code>walk</code>, <code>zero</code>).</li>
-  <li><strong><code>rviz2</code></strong> — preconfigured to show the RobotModel + TF + the world grid.</li>
+  <li><strong><code>joint_animator</code></strong> — publishes <code>/joint_states</code> at 30 Hz, driving all 29 G1 joints through one of six patterns (<code>wave</code>, <code>walk</code>, <code>squat</code>, <code>tpose</code>, <code>stretch</code>, <code>zero</code>).</li>
+  <li><strong><code>rviz2</code></strong> — preconfigured to show the RobotModel + TF + world grid.</li>
 </ul>
 
 <h3>Bring it up</h3>
-<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh
-<span class="com"># rviz window opens — orange-and-blue humanoid waving its arms.</span>
-<span class="com"># Headless? Pass false as the third arg:</span>
-<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh toy wave false</pre>
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh                  <span class="com"># default: wave</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh walk             <span class="com"># walking gait</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh squat            <span class="com"># squat cycle</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh tpose            <span class="com"># T-pose</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh stretch          <span class="com"># full-body rotation</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh wave false       <span class="com"># headless (no rviz window)</span></pre>
+
+<p>If the G1 assets aren't fetched yet, <code>sim_up.sh</code> prints the two commands you need to run first (<code>install/06_fetch_g1_assets.sh</code> + <code>ros2_build.sh g1_description</code>). <code>scripts/deploy_and_test.sh</code> auto-fetches them.</p>
+
+<h3>The five patterns, side by side</h3>
+
+<figure class="shot">
+  <img src="screenshots/g1_wave.png" alt="G1 in rviz with right hand raised, waving">
+  <figcaption><strong>wave</strong> — right shoulder lifted overhead, hand waving side-to-side. Left arm relaxed at side, legs straight.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="screenshots/g1_walk.png" alt="G1 in rviz with knees bent, mid-walking gait">
+  <figcaption><strong>walk</strong> — alternating hip pitch + knee bend, opposite-arm counter-swing, slight torso roll for balance. ~0.7 Hz gait.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="screenshots/g1_squat.png" alt="G1 in rviz mid-squat, knees deeply bent">
+  <figcaption><strong>squat</strong> — slow knee + hip + ankle flex (4-second cycle). Arms reach forward to counter-balance.</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="screenshots/g1_tpose.png" alt="G1 in T-pose, arms straight out to the sides">
+  <figcaption><strong>tpose</strong> — both shoulders at ±π/2, arms straight out. The classic calibration pose for animation rigs.</figcaption>
+</figure>
 
 <h3>What just happened — every concept from the intro, live</h3>
 
@@ -614,36 +661,32 @@ If you ever lose track of the env state, <code>bash scripts/doctor.sh</code> dum
 /joint_states         sensor_msgs/msg/JointState
 /robot_description    std_msgs/msg/String
 /tf                   tf2_msgs/msg/TFMessage
-/tf_static            tf2_msgs/msg/TFMessage
-/parameter_events     rcl_interfaces/msg/ParameterEvent
-/rosout               rcl_interfaces/msg/Log</pre>
+/tf_static            tf2_msgs/msg/TFMessage</pre>
 
-<p>Watch the joint stream while the robot moves:</p>
-<pre><span class="pmt">$</span> ros2 topic echo /joint_states
-header:
-  stamp: { sec: 1778449045, nanosec: 412034567 }
-  frame_id: ''
+<p>Watch the joint stream — all 29 G1 joints in one message:</p>
+<pre><span class="pmt">$</span> ros2 topic echo /joint_states --once
+header: { stamp: { sec: 1778449045 } }
 name:
-- left_shoulder_pitch
-- right_shoulder_pitch
-- left_elbow
-- right_elbow
-- left_hip_pitch
-- right_hip_pitch
-position: [-1.473, -1.527, 0.612, 0.388, 0.0, 0.0]
----</pre>
+- left_hip_pitch_joint
+- left_hip_roll_joint
+- left_hip_yaw_joint
+- left_knee_joint
+- left_ankle_pitch_joint
+- left_ankle_roll_joint
+- right_hip_pitch_joint
+… (29 joints total)
+- right_wrist_yaw_joint
+position: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, …]</pre>
 
-<p>Watch the rate (it should be exactly 30 Hz, the rate the animator publishes at):</p>
 <pre><span class="pmt">$</span> ros2 topic hz /joint_states
-average rate: 30.000</pre>
+average rate: 30.000     <span class="com"># exactly the publisher rate</span></pre>
 
-<p>Publish to <code>/joint_states</code> directly — bypass the animator, hold any pose by hand:</p>
+<p>Publish to <code>/joint_states</code> directly — hold an arbitrary pose by hand:</p>
 <pre><span class="pmt">$</span> ros2 topic pub --once /joint_states sensor_msgs/msg/JointState \
-       <span class="str">'{name: ["left_shoulder_pitch","right_shoulder_pitch","left_elbow","right_elbow","left_hip_pitch","right_hip_pitch"], position: [-1.5, 0.0, 0.5, 0.0, 0.0, 0.0]}'</span>
-<span class="com"># the robot snaps to that pose, then the animator overrides on the next tick.</span>
-<span class="com"># to hold it: kill the animator with: ros2 lifecycle / or ctrl+c the launch.</span></pre>
+       <span class="str">'{name: ["left_shoulder_pitch_joint","right_shoulder_pitch_joint"], position: [-1.5, -1.5]}'</span>
+<span class="com"># the robot snaps to arms-overhead, then the animator overrides on the next tick</span></pre>
 
-<h3>Tweak the animation pattern at runtime — exercise <code>ros2 param</code></h3>
+<h3>Switch the animation pattern at runtime — exercise <code>ros2 param</code></h3>
 
 <pre><span class="pmt">$</span> ros2 param list /joint_animator
 pattern
@@ -655,23 +698,24 @@ String value is: wave
 
 <span class="pmt">$</span> ros2 param set /joint_animator pattern walk
 Set parameter successful
-<span class="com"># the robot in rviz transitions to a walking gait, no restart needed</span>
+<span class="com"># rviz transitions to a walking gait — no restart needed</span>
 
+<span class="pmt">$</span> ros2 param set /joint_animator pattern squat
+<span class="pmt">$</span> ros2 param set /joint_animator pattern stretch
 <span class="pmt">$</span> ros2 param set /joint_animator pattern zero
-<span class="com"># all joints relax to 0 — useful to verify the URDF zero pose visually</span></pre>
+<span class="com"># zero = URDF natural standing pose (every joint at 0)</span></pre>
 
-<h3>Query the kinematics — exercise <code>tf2</code></h3>
+<h3>Query the G1's kinematics — exercise <code>tf2</code></h3>
 
-<pre><span class="pmt">$</span> ros2 run tf2_ros tf2_echo base_link head_link
-At time …
+<pre><span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis head_link
 - Translation: [0.000, 0.000, 0.450]
 - Rotation: in Quaternion (xyzw) [0.000, 0.000, 0.000, 1.000]
 
-<span class="pmt">$</span> ros2 run tf2_ros tf2_echo base_link left_forearm_link
-<span class="com"># the forearm pose updates as the wave animation runs.</span>
+<span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis left_wrist_yaw_link
+<span class="com"># the wrist pose updates as the animation runs.</span>
 
 <span class="pmt">$</span> ros2 run tf2_tools view_frames
-<span class="com"># produces frames.pdf showing every parent→child link in the tree</span></pre>
+<span class="com"># produces frames.pdf showing every parent→child link in the tree (41 links)</span></pre>
 
 <h3>Drive a Twist topic — exercise the <code>cmd_vel</code> contract</h3>
 
@@ -688,22 +732,24 @@ At time …
 
 <div class="callout ok">
 <strong>What you've just learned in a 5-minute session</strong>
-You stood up a 3D humanoid, inspected its live topic graph, watched joint state stream by, queried the TF tree, switched its motion pattern at runtime via a parameter, and drove a velocity topic with a separate keyboard process you didn't write — every CLI verb you'll use against the real G1 in lessons 07–09. <em>The verbs don't change; only the robot does.</em>
+You stood up the actual Unitree G1 in 3D, inspected its live topic graph, watched all 29 joint angles stream by, queried the TF tree of 41 links, switched its motion pattern at runtime via a parameter, and drove a velocity topic with a separate keyboard process you didn't write — every CLI verb you'll use against the real hardware in lessons 07–09. <em>The verbs don't change; only the source of <code>/joint_states</code> does.</em>
 </div>
 
-<h3>Step up to the real Unitree G1 URDF — opt-in</h3>
+<h3>What's actually under the hood</h3>
 
-<p>The toy humanoid is intentionally simple. The same launch infrastructure can drive the <strong>real Unitree G1 URDF</strong> (29 DOF, full STL meshes, identical to what runs on the hardware). The fetch is opt-in because the assets are ~150 MB:</p>
+<p>The G1 URDF lives at <code>ws/src/g1_description/g1_29dof.urdf</code> (vendored from upstream by <code>install/06_fetch_g1_assets.sh</code>). The launch file (<code>ws/src/tutorial_sim/launch/g1_sim.launch.py</code>) does three things before passing the URDF to <code>robot_state_publisher</code>:</p>
+<ul>
+  <li>rewrites every relative <code>&lt;mesh filename="meshes/X.STL"/&gt;</code> to <code>package://g1_description/meshes/X.STL</code> so rviz2 can resolve them via ament;</li>
+  <li>wraps the resulting XML in <code>ParameterValue(value_type=str)</code> (Jazzy launch quirk);</li>
+  <li>activates the rviz preset at <code>ws/src/tutorial_sim/rviz/g1.rviz</code> with <code>pelvis</code> as the fixed frame.</li>
+</ul>
 
-<pre><span class="pmt">$</span> <span class="fn">bash</span> install/06_fetch_g1_assets.sh
-<span class="com"># sparse-clones https://github.com/unitreerobotics/unitree_ros</span>
-<span class="com"># into ws/src/g1_description/  (URDF + meshes only)</span>
+<figure class="shot">
+  <img src="screenshots/g1_wave.png" alt="The real G1 in rviz, posed mid-wave">
+  <figcaption>What "the real G1 URDF" looks like in rviz2: 41 fully-rendered links, the actual hardware kinematics, ready to drive from any ROS 2 node that publishes <code>/joint_states</code>.</figcaption>
+</figure>
 
-<span class="pmt">$</span> <span class="fn">bash</span> scripts/ros2_build.sh g1_description
-<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh g1
-<span class="com"># rviz now shows the real G1 — pelvis, legs, arms, head, all 29 joints.</span></pre>
-
-<p>The animator still publishes the same six joint names. On the real G1 those map to <code>left_shoulder_pitch_joint</code>, <code>left_elbow_joint</code>, etc. — the rest of the body sits at zero, which is the safe default. (Extending the animator to drive all 29 joints is a one-evening exercise; the URDF tells you the joint names — <code>ros2 param list</code> on the loaded model.)</p>
+<p>The animator publishes positions for all 29 G1 joints: the six driven ones (shoulder pitch, elbow, hip pitch — each side) and the other 23 (knees, ankles, wrists, waist, shoulder roll/yaw, hip roll/yaw) held at 0.0. Without publishing the full set, the unspecified joints leave gaps in the TF tree and the body looks collapsed.</p>
 
 <h3>Stop everything</h3>
 <p>Ctrl+C in the launch shell. <code>ros2 node list</code> goes empty. No daemons left running.</p>
@@ -1196,75 +1242,49 @@ A bag is the cheapest possible regression test. Record one good run, replay it d
 <!-- ============================================================ -->
 <section class="lesson" id="sim">
 <header>
-  <div class="crumb">▸ real hardware shape</div>
-  <h2>The real Unitree G1 URDF — visualize the actual robot</h2>
-  <p class="summary">Same launch infrastructure, real meshes, real joint count. Fetch the upstream URDF and watch the actual G1 wave its arms in rviz2.</p>
+  <div class="crumb">▸ deeper — record, replay, alternate URDFs</div>
+  <h2>Going further with the G1 sim</h2>
+  <p class="summary">Plot live joint angles, record + replay a session, pick alternate URDF flavours, and the next step up — Gazebo physics.</p>
 </header>
 
-<p>The toy humanoid you brought up earlier is a kinematic stand-in — six joints, primitive shapes. The <strong>real</strong> Unitree G1 has 29 DOF, finely-detailed STL meshes, and link inertias matching the physical robot. The upstream URDF lives in Unitree's <code>unitree_ros</code> repository on GitHub and is the same model that drives the G1 in mujoco_ros, IsaacSim, and the official ROS 2 stack.</p>
+<p>You already brought the G1 up in <a href="#first">the first-robot section</a>. This page demos the things you do <em>after</em> the robot is on the screen.</p>
 
-<h3>Fetch the assets — opt-in (~150 MB download)</h3>
+<h3>Plot a live joint angle</h3>
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_plot.sh /joint_states/position[15]
+<span class="com"># index 15 = left_shoulder_pitch_joint — strip chart of the wave</span></pre>
 
-<pre><span class="pmt">$</span> <span class="fn">bash</span> install/06_fetch_g1_assets.sh
-[06_fetch_g1] fetching G1 URDF + meshes from
-              https://github.com/unitreerobotics/unitree_ros (sparse, depth=1)
-[06_fetch_g1] copying robots/g1_description → ws/src/g1_description
-[06_fetch_g1] vendored: 12 URDF variant(s), 84 mesh file(s)
-
-<span class="pmt">$</span> <span class="fn">bash</span> scripts/ros2_build.sh g1_description
-Finished &lt;&lt;&lt; g1_description [3.42s]</pre>
-
-<p>The fetch script does a sparse, shallow git clone of <code>unitreerobotics/unitree_ros</code>, picks just the <code>robots/g1_description/</code> subtree, and wraps it as a colcon package so <code>robot_state_publisher</code> can find it via <code>package://g1_description/...</code> URIs.</p>
-
-<h3>Bring up the real G1 in rviz2</h3>
-
-<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh g1
-<span class="com"># rviz opens — the actual G1: pelvis, legs, arms, head.</span>
-<span class="com"># wave pattern animates the shoulders + elbows + hips.</span></pre>
-
-<p>The launch file (<code>g1_sim.launch.py</code>) does the same three things as the toy launch — load URDF into <code>robot_state_publisher</code>, run the animator, open rviz2 — but with the real model. Variants:</p>
-
-<pre><span class="pmt">$</span> <span class="com"># pick a different URDF flavor:</span>
-<span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py urdf:=g1_29dof_lock_waist.urdf
-
-<span class="pmt">$</span> <span class="com"># headless (CI / no display):</span>
-<span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py rviz:=false
-
-<span class="pmt">$</span> <span class="com"># walk pattern on the real model:</span>
-<span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py pattern:=walk</pre>
-
-<h3>Inspect the full kinematic tree</h3>
-
-<pre><span class="pmt">$</span> <span class="com"># the G1's root frame is `pelvis`, not `base_link`</span>
-<span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis left_wrist_yaw_link
-<span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis right_ankle_roll_link
-
-<span class="pmt">$</span> <span class="com"># dump the whole tree as a PDF:</span>
-<span class="pmt">$</span> ros2 run tf2_tools view_frames
-<span class="com"># 41 links, 40 joints. The PDF lands in the current dir.</span></pre>
-
-<h3>Plot a real joint angle as the wave animation runs</h3>
-<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_plot.sh /joint_states/position[0]
-<span class="com"># live strip chart — left_shoulder_pitch_joint sine wave at 0.33 Hz</span></pre>
-
-<h3>Bag the wave + replay it without the animator</h3>
+<h3>Bag the run + replay it without the animator</h3>
 <pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/bag_record.sh /joint_states /tf /tf_static
 <span class="com"># Ctrl+C after 10 seconds — bags/session_&lt;ts&gt;/ written</span>
 
-<span class="pmt">$</span> <span class="com"># stop the sim, then replay the bag back into a fresh sim:</span>
+<span class="pmt">$</span> <span class="com"># stop the sim, then replay the bag into a fresh launch:</span>
 <span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/bag_play.sh
 <span class="pmt">$</span> ros2 topic hz /joint_states
 average rate: 30.000      <span class="com"># publisher is now ros2 bag, not the animator</span></pre>
+
+<h3>Pick a different URDF flavour</h3>
+
+<p>The upstream <code>g1_description</code> ships several URDF variants — locked waist, 23-DOF, with hands, etc. Pass <code>urdf:=</code> to switch:</p>
+<pre><span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py urdf:=g1_29dof_lock_waist.urdf
+<span class="pmt">$</span> ros2 launch tutorial_sim g1_sim.launch.py urdf:=g1_29dof_with_hand.urdf
+<span class="pmt">$</span> ls ws/install/g1_description/share/g1_description/*.urdf  <span class="com"># list all variants</span></pre>
+
+<h3>Inspect the full kinematic tree</h3>
+<pre><span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis left_wrist_yaw_link
+<span class="pmt">$</span> ros2 run tf2_ros tf2_echo pelvis right_ankle_roll_link
+
+<span class="pmt">$</span> ros2 run tf2_tools view_frames
+<span class="com"># produces frames.pdf — 41 links, 40 joints in the tree</span></pre>
 
 <h3>One step further — Gazebo Sim physics</h3>
 
 <p>The env also ships <strong>Gazebo Sim</strong> (modern <code>gz</code>, formerly Ignition). It's a full physics simulator with gravity, contacts, and collisions:</p>
 <pre><span class="pmt">$</span> gz sim shapes.sdf      <span class="com"># canonical demo world</span></pre>
-<p>Driving the G1 URDF in Gazebo needs two extra pieces: a <code>&lt;gazebo&gt;</code> block in the URDF declaring contact + inertia, and the <code>ros_gz_bridge</code> package to translate gz topics ↔ ROS 2 topics. Out of scope for this tutorial, but the URDF you just installed is the same one Unitree distributes for mujoco_ros — it's the right starting point. See <a href="#further">"What to build next"</a>.</p>
+<p>Driving the G1 URDF in Gazebo needs two extra pieces: a <code>&lt;gazebo&gt;</code> block in the URDF declaring contact + inertia, and the <code>ros_gz_bridge</code> package to translate gz topics ↔ ROS 2 topics. Out of scope for this tutorial, but the URDF you have is the same one Unitree distributes for mujoco_ros — it's the right starting point. See <a href="#further">"What to build next"</a>.</p>
 
 <div class="callout ok">
 <strong>What you have at this point</strong>
-You can stand up the actual G1 in 3D, query its real kinematics from the CLI, change its behavior at runtime via a parameter, record a session, and replay it. The model is identical to what runs on the hardware. Lessons 07–09 use the same robot model — only the source of <code>/joint_states</code> changes (animator → DDS bridge → real motor encoders).
+You can stand up the actual Unitree G1 in 3D, query its real kinematics from the CLI, change motion patterns at runtime, record a session, replay it, and swap to alternate URDF flavours. Lessons 07–09 use the <em>same</em> robot model — only the source of <code>/joint_states</code> changes (animator → DDS bridge → real motor encoders).
 </div>
 </section>
 

@@ -2,7 +2,7 @@
 <package format="3">
   <name>tutorial_sim</name>
   <version>0.1.0</version>
-  <description>Simulated humanoid: URDF + robot_state_publisher + joint animator + rviz2 preset. Hands-on practice for the ROS 2 toolkit without a real robot.</description>
+  <description>Drives the Unitree G1 URDF in rviz2 — robot_state_publisher + joint animator + preset rviz config. Animates all 29 G1 joints through wave / walk / squat / tpose / stretch patterns.</description>
   <maintainer email="tutorial@example.com">ROS Tutorial</maintainer>
   <license>MIT</license>
 
@@ -13,7 +13,7 @@
 
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>rviz2</exec_depend>
-  <exec_depend>xacro</exec_depend>
+  <exec_depend>g1_description</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

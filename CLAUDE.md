@@ -84,9 +84,8 @@ docs.
 | Run smoke tests | `pytest tests/ -v` |
 | Diagnostic dump | `bash scripts/doctor.sh` |
 | Run a lesson | `bash scripts/run_tutorial.sh <NN>` |
-| Bring up toy humanoid | `bash scripts/tools/sim_up.sh` |
-| Bring up real Unitree G1 | `bash scripts/tools/sim_up.sh g1` |
-| Fetch real G1 URDF assets | `bash install/06_fetch_g1_assets.sh` |
+| Bring up Unitree G1 in rviz2 | `bash scripts/tools/sim_up.sh` (or `walk`/`squat`/`tpose`/`stretch`) |
+| Fetch G1 URDF assets | `bash install/06_fetch_g1_assets.sh` |
 | Live system snapshot | `bash scripts/tools/inspect.sh` |
 | Record / replay a bag | `bash scripts/tools/bag_record.sh` / `bag_play.sh` |
 

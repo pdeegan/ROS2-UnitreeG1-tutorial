@@ -134,10 +134,10 @@ def test_tutorial_tf_broadcasts() -> None:
 
 
 def test_tutorial_sim_animator_publishes_joints() -> None:
-    """tutorial_sim animator publishes /joint_states with all six joint names."""
+    """tutorial_sim animator publishes /joint_states with all 29 G1 joints."""
     import rclpy
     from sensor_msgs.msg import JointState
-    from tutorial_sim.animator import JOINTS, Animator
+    from tutorial_sim.animator import G1_JOINTS, Animator
 
     rclpy.init()
     try:
@@ -153,8 +153,9 @@ def test_tutorial_sim_animator_publishes_joints() -> None:
 
         assert seen, "no /joint_states received from the animator"
         msg = seen[0]
-        assert tuple(msg.name) == JOINTS
-        assert len(msg.position) == len(JOINTS)
+        assert len(G1_JOINTS) == 29, "expected 29 G1 joints"
+        assert tuple(msg.name) == G1_JOINTS
+        assert len(msg.position) == len(G1_JOINTS)
         listener.destroy_node()
         animator.destroy_node()
     finally:
@@ -162,7 +163,7 @@ def test_tutorial_sim_animator_publishes_joints() -> None:
 
 
 def test_tutorial_sim_share_files_installed() -> None:
-    """The URDF, launch file, and rviz config end up in share/tutorial_sim/."""
+    """The G1 launch file and rviz config end up in share/tutorial_sim/."""
     import os
     from ament_index_python.packages import get_package_share_directory
 
@@ -172,9 +173,8 @@ def test_tutorial_sim_share_files_installed() -> None:
         pytest.skip(f"tutorial_sim not installed ({exc})")
 
     expected = [
-        "urdf/humanoid.urdf.xacro",
-        "launch/sim.launch.py",
-        "rviz/humanoid.rviz",
+        "launch/g1_sim.launch.py",
+        "rviz/g1.rviz",
     ]
     for rel in expected:
         path = os.path.join(share, rel)
