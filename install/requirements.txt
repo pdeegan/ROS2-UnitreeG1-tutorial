@@ -18,5 +18,5 @@ onnxruntime>=1.17
 piper-tts>=1.2 ; python_version<"3.13"
 
 # Test helpers (pytest itself is already in the env).
-pytest-timeout>=2.2
+pytest-timeout>=2.4.0
 pytest-asyncio>=0.23
