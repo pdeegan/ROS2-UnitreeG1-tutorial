@@ -23,6 +23,20 @@ robot="${1:-toy}"
 pattern="${2:-wave}"
 rviz="${3:-true}"
 
+# Kill any stale sim from a previous run. Without this you can end up
+# with TWO robot_state_publishers broadcasting different URDFs to /tf,
+# which makes rviz show a confused mash-up of toy + G1 frames.
+echo "[sim_up] killing any stale sim processes…"
+pkill -KILL -f 'tutorial_sim/lib/'        2>/dev/null || true
+pkill -KILL -f 'joint_animator'           2>/dev/null || true
+pkill -KILL -f '/lib/robot_state_publisher/' 2>/dev/null || true
+pkill -KILL -f 'rviz2 .*humanoid.rviz'    2>/dev/null || true
+pkill -KILL -f 'rviz2 .*g1.rviz'          2>/dev/null || true
+sleep 0.5
+ros2 daemon stop > /dev/null 2>&1 || true
+sleep 0.3
+ros2 daemon start > /dev/null 2>&1 || true
+
 case "$robot" in
   toy)
     exec ros2 launch tutorial_sim sim.launch.py pattern:="$pattern" rviz:="$rviz"
