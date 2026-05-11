@@ -26,7 +26,6 @@ Exit code 0 = everything works. Non-zero = something is wrong; the
 script lists exactly which checks failed and where the per-step logs
 live (`/tmp/e2e_*.log`).
 
----
 
 ## What gets tested, and why
 
@@ -113,7 +112,6 @@ binaries are available. Doesn't try to open a window (would hang
 headless). If you're on a real desktop or WSLg, manually verify the
 GUI side with `bash scripts/tools/sim_up.sh`.
 
----
 
 ## Running by hand
 
@@ -165,7 +163,6 @@ bash scripts/tools/inspect.sh
 #   should see: tabular output of every node/topic/service/param/rate
 ```
 
----
 
 ## CI — running this in GitHub Actions
 
@@ -193,7 +190,6 @@ In CI you'd typically pass `--quick` (skip the longer per-lesson
 timeout block) and `--skip-fetch` (don't pull 150 MB on every PR).
 For nightlies, drop `--quick` and add `--fetch-g1`.
 
----
 
 ## When the e2e fails
 
@@ -224,7 +220,6 @@ pkill -9 -f 'tutorial_|joint_animator|g1_bridge|rosbag'
 ros2 daemon stop
 ```
 
----
 
 ## Coverage summary
 

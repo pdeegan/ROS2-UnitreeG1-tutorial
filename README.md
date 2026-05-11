@@ -8,7 +8,6 @@ climbs to real humanoid control: voice in, motion out.
 This is **infrastructure for learning**, not a robot stack. Read the
 code, edit the code, and break it on purpose.
 
----
 
 ## Why this exists
 
@@ -36,7 +35,6 @@ That breaks the moment you sit at a Debian trixie WSL prompt with a
 - A `.claude/` harness with specialist subagents and slash commands
   for working on this codebase with Claude Code.
 
----
 
 ## Quick start
 
@@ -62,7 +60,6 @@ If you don't have an existing micromamba+ROS install, see
 [install/INSTALL.md](install/INSTALL.md) for the opt-in path that
 builds a fresh env from scratch.
 
----
 
 ## One-shot deploy + test (no human in the loop)
 
@@ -126,7 +123,6 @@ bash scripts/tools/rqt_plot.sh /joint_states/position[15]  # plot left_shoulder_
 bash scripts/tools/inspect.sh                # CLI snapshot of every node/topic
 ```
 
----
 
 ## Repository map
 
@@ -197,7 +193,6 @@ ROS_tutorial/
     └── scripts/               # session hooks
 ```
 
----
 
 ## Lessons
 
@@ -241,7 +236,6 @@ bash scripts/ros2_build.sh g1_description
 bash scripts/tools/sim_up.sh        # G1 is the default; pass walk/squat/tpose/wave for other patterns
 ```
 
----
 
 ## What this is NOT
 
@@ -254,7 +248,6 @@ bash scripts/tools/sim_up.sh        # G1 is the default; pass walk/squat/tpose/w
 - Not a Unitree SDK fork. We depend on the upstream
   `unitree_sdk2_python` and provide adapters around it.
 
----
 
 ## Safety boundary (read this)
 
@@ -271,7 +264,6 @@ The G1 lessons command a real humanoid. Before any motion lesson:
 The bridge package refuses to publish `lowcmd` while
 `/g1/safety_engaged` is false. Do not patch around it.
 
----
 
 ## Source
 

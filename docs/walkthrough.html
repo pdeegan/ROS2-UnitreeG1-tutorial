@@ -447,7 +447,7 @@ footer {
     <li><a href="#L07"><span class="num">07</span>G1 bridge<span class="sub">DDS ↔ ROS 2</span></a></li>
     <li><a href="#L08"><span class="num">08</span>Voice I/O<span class="sub">listen &amp; speak</span></a></li>
     <li><a href="#L09"><span class="num">09</span>High-level control<span class="sub">sit, stand, wave</span></a></li>
-    <li><a href="#bigpicture"><span class="num">▸</span>Full system graph<span class="sub">every node + topic</span></a></li>
+    <li><a href="#physics"><span class="num">▸</span>G1 in physics<span class="sub">MuJoCo, falling, balance</span></a></li>
     <li><a href="#further"><span class="num">→</span>What to build next</a></li>
   </ol>
 </nav>
@@ -1024,8 +1024,8 @@ Transitioning successful
 <span class="com"># only now do messages flow</span></pre>
 
 <div class="callout">
-<strong>Why this matters for the G1</strong>
-The high-level controller (<a href="#L09">lesson 09</a>) is a lifecycle node. It allocates the <code>/g1/lowcmd</code> publisher in <code>configure</code>, starts sending in <code>activate</code>, and goes silent on <code>deactivate</code> &mdash; without tearing down the full node, so re-activation is fast.
+<strong>Where this shows up later</strong>
+The high-level controller (<a href="#L09">lesson 09</a>) is a lifecycle node. It allocates the <code>/g1/lowcmd</code> publisher in <code>configure</code>, starts sending in <code>activate</code>, and goes silent on <code>deactivate</code> without tearing down the full node, so re-activation is fast.
 </div>
 </section>
 
@@ -1363,8 +1363,8 @@ average rate: 50.000</pre>
 [WARN] safety latch → ENGAGED</pre>
 
 <div class="callout warn">
-<strong>Two-layer safety, not one</strong>
-The bridge's safety check is one layer. The <a href="#L09">controller</a> in lesson 09 checks the same latch <em>before publishing</em>. A bug in the controller can't reach the SDK unless both checks fail. Refactors that "simplify" the two into one are regressions.
+<strong>The latch is checked twice</strong>
+Once in the controller (<a href="#L09">lesson 09</a>) before it publishes, once in the bridge before it forwards to the SDK. A bug in the controller alone can't reach the robot. If a future refactor collapses both checks into one, that's a regression.
 </div>
 </section>
 
@@ -1444,7 +1444,7 @@ std_srvs.srv.Trigger_Response(success=True, message="spoke 'Hello. I am the G1. 
     <tr><td>Services</td><td>03</td><td><code>/g1/set_mode</code> for posture switches</td></tr>
     <tr><td>Actions</td><td>04</td><td>(in a richer build) <code>walk_to_pose</code></td></tr>
     <tr><td>Pub/sub QoS</td><td>02</td><td><code>/g1/lowstate</code> sub, <code>/g1/lowcmd</code> pub</td></tr>
-    <tr><td>Safety latch</td><td>07</td><td>structural check before every publish</td></tr>
+    <tr><td>Safety latch</td><td>07</td><td>checked before every publish, on both sides</td></tr>
   </tbody>
 </table>
 
@@ -1488,38 +1488,49 @@ A four-node system (bridge, safety, controller, client) where motion commands fl
 </section>
 
 <!-- ============================================================ -->
-<section class="lesson" id="bigpicture">
+<section class="lesson" id="physics">
 <header>
-  <div class="crumb">▸ the whole system</div>
-  <h2>The full G1 system — every node + every topic</h2>
-  <p class="summary">When you've worked through the lessons, here's what the complete topic graph looks like with the sim, the bridge, the safety latch, and the speaker all running simultaneously.</p>
+  <div class="crumb">▸ next step</div>
+  <h2>G1 in physics: watch it fall, then teach it not to</h2>
+  <p class="summary">rviz draws the URDF, but nothing pulls it down. To get a G1 that can actually <em>fall</em>, run it under a physics simulator. MuJoCo is the cheapest path: the official G1 model is hardware-validated and runs on a laptop CPU.</p>
 </header>
 
-<p>Run all five nodes together to see the system you've built:</p>
+<p>The kinematic sim you've been driving so far ignores gravity, contacts, and inertia. Add physics and the same URDF turns into a 35 kg humanoid that collapses on the floor the moment you let go of the keyframe. That collapse is the starting point for every balancing controller ever written.</p>
 
-<pre><span class="pmt">$</span> <span class="fn">source</span> scripts/ros2_env.sh
-<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh wave false &amp;          <span class="com"># sim + animator + RSP (headless)</span>
-<span class="pmt">$</span> G1_BRIDGE_FAKE=1 ros2 run g1_bridge bridge &amp;        <span class="com"># DDS↔ROS bridge (fake mode)</span>
-<span class="pmt">$</span> ros2 run g1_bridge safety &amp;                          <span class="com"># safety latch</span>
-<span class="pmt">$</span> ros2 run g1_speech speak &amp;                           <span class="com"># piper TTS speaker</span>
-<span class="pmt">$</span> ros2 service call /g1/safety/engage std_srvs/srv/Trigger  <span class="com"># engage safety</span>
-<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_graph.sh                       <span class="com"># open the live graph</span></pre>
+<h3>MuJoCo Menagerie — the 5-minute fall</h3>
 
-<figure class="shot">
-  <img src="screenshots/rqt_graph_full.png" alt="Full G1 system topic graph — 5 nodes, every topic">
-  <figcaption><strong>The full G1 graph</strong> — five nodes live: <code>safety_latch</code> publishing the latched <code>/g1/safety_engaged</code> topic to <code>g1_bridge</code>; <code>joint_animator</code> streaming <code>/joint_states</code> to <code>robot_state_publisher</code> (which republishes <code>/tf</code>); <code>speaker</code> standing by with its <code>/g1/speech/say</code> service. Services don't draw as edges in rqt_graph by default (it shows only topic traffic) — that's why <code>/speaker</code> sits alone. Add <code>/g1_controller</code> (lesson 09) and you also see the <code>/g1/lowcmd</code> publish edge into the bridge.</figcaption>
-</figure>
+<p>Google DeepMind maintains <a href="https://github.com/google-deepmind/mujoco_menagerie/tree/main/unitree_g1">mujoco_menagerie/unitree_g1</a>, which ships <code>g1.xml</code>, <code>g1_mjx.xml</code>, and a <code>scene.xml</code> with <code>stand</code> and <code>knees_bent</code> keyframes. The MJX variant has been sim-to-real validated by Unitree.</p>
 
-<p>Switch the rqt view to <strong>Nodes/Topics (active)</strong> to also see the latched topics + bridge state topics. Toggle <strong>Group: Namespaces</strong> to collapse <code>/g1/*</code> into one bubble. Press the refresh icon any time nodes come and go.</p>
+<pre><span class="pmt">$</span> pip install mujoco
+<span class="pmt">$</span> git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie ~/mj_menagerie
+<span class="pmt">$</span> python -m mujoco.viewer --mjcf=~/mj_menagerie/unitree_g1/scene.xml
+<span class="com"># Click "Pause", then drag the time slider forward. The G1 falls.</span>
+<span class="com"># Load the "stand" keyframe from the Control panel and watch it collapse from upright.</span></pre>
 
-<h3>Tear down cleanly</h3>
-<pre><span class="pmt">$</span> ros2 service call /g1/safety/release std_srvs/srv/Trigger    <span class="com"># release the latch</span>
-<span class="pmt">$</span> kill %1 %2 %3 %4                                              <span class="com"># bring down the background nodes</span>
-<span class="pmt">$</span> ros2 node list                                                <span class="com"># should be empty (or just /rosout)</span></pre>
+<p>That's the entire setup. No URDF rewrite, no <code>&lt;gazebo&gt;</code> tags, no transmission plumbing. The Unitree-published model includes inertias, contact pairs, and motor limits good enough that the falling pose matches a real G1 with the power cut.</p>
 
-<div class="callout ok">
-<strong>This is the system you've built</strong>
-Five small processes, one shared topic graph, one structural safety latch, one TTS path. Swap <code>G1_BRIDGE_FAKE=1</code> off and connect a real G1 over wired ethernet on 192.168.123.x and the same graph drives the actual robot — only the source of <code>/g1/lowstate</code> changes.
+<h3>Why not Gazebo</h3>
+
+<p>The same URDF in Gazebo doesn't work out of the box: <a href="https://github.com/unitreerobotics/unitree_ros/issues/129">unitree_ros#129</a> documents the gap — no <code>&lt;gazebo&gt;</code> blocks, no transmission entries, no <code>ros2_control</code> YAML. Closing that gap is a few days of work for a stationary G1 and weeks for a walking one. If you don't have a strong reason to use Gazebo (e.g., a depth-camera plugin you already trust), skip it.</p>
+
+<p>Isaac Lab is the other path, and the right one if you want to <em>train</em> a balancing policy with PPO at thousands of parallel envs. <a href="https://github.com/unitreerobotics/unitree_sim_isaaclab">unitree_sim_isaaclab</a> ships ready-made G1 environments. NVIDIA's stated floor is 12 GB VRAM, which makes a 16 GB card workable for single-env work but tight for high-resolution sensors. Plan a day to install on a clean Ubuntu host; WSL2 fights the RTX renderer.</p>
+
+<h3>From "it falls" to "it balances"</h3>
+
+<p>Two open repos are the standard jumping-off point for a G1 balance controller:</p>
+
+<ul>
+  <li><a href="https://github.com/unitreerobotics/unitree_rl_mjlab">unitree_rl_mjlab</a> — Isaac-Lab-style RL on top of MJX, G1 included. Trains a walking policy on one 4070-class GPU in roughly an hour. Best fit for a 16 GB rig.</li>
+  <li><a href="https://github.com/google-deepmind/mujoco_playground">mujoco_playground</a> — DeepMind's MJX environment zoo. G1, H1, Booster T1, Berkeley Humanoid, OP3, and dexterous hands. <code>pip install playground</code> and you're training in minutes.</li>
+  <li><a href="https://github.com/InternRobotics/HoST">HoST</a> (RSS 2025) — "G1 stand up from any prone posture." Closest open answer to "G1 push-recovery" today. Built on legged_gym / IsaacGym.</li>
+  <li><a href="https://github.com/unitreerobotics/unitree_rl_gym">unitree_rl_gym</a> — the original IsaacGym repo with G1, H1, H1-2, Go2 walking. IsaacGym is deprecated, but the trained policies and the sim-to-real path are still useful references.</li>
+</ul>
+
+<p>The deployment loop: train in <code>unitree_rl_mjlab</code> or <code>mujoco_playground</code>, export the policy as TorchScript, wrap it in an <code>rclpy</code> node that subscribes to <code>/g1/lowstate</code> and publishes <code>/g1/lowcmd</code>. Leave the safety latch engaged; if the policy ever produces NaN or saturates a joint, the latch is what keeps you from chasing the robot around the lab.</p>
+
+<div class="callout">
+<strong>What changes between sim and real</strong>
+The bridge stays the same. Replace <code>G1_BRIDGE_FAKE=1</code> with a CycloneDDS connection to the robot's 192.168.123.x interface and the same node graph drives a physical G1. The policy you trained in MuJoCo needs domain randomisation (motor latency, foot friction, mass perturbation) before it survives contact with the real ground.
 </div>
 </section>
 
@@ -1528,25 +1539,77 @@ Five small processes, one shared topic graph, one structural safety latch, one T
 <header>
   <div class="crumb">what's next</div>
   <h2>What to build next</h2>
-  <p class="summary">Ten small projects that turn this scaffold into something useful.</p>
+  <p class="summary">Concrete projects, grouped by what they teach. For each, the upstream repo to start from, the part you'd actually be writing yourself, and the realistic gotcha.</p>
 </header>
 
-<p>The tutorial stops where production work begins. If you want to keep going:</p>
+<h3>Tighten the bridge you already have</h3>
 
-<ol>
-  <li><strong>Real walk-to-pose action.</strong> <code>humanoid_msgs/WalkToPose.action</code> is defined; wire <code>g1_controller</code> to send the SDK's high-level sport-mode request and stream <code>SportModeState_</code> back as feedback.</li>
-  <li><strong>Gain ramping.</strong> The lesson sends one damping command. A real controller ramps <code>kp</code> and <code>kd</code> with a smoothstep over ~200 ms so the robot doesn't snap to position.</li>
-  <li><strong>Watchdog.</strong> Auto-abort active control if <code>/g1/lowstate</code> goes stale (e.g., &gt; 100 ms). The G1 falls if you stop publishing <code>lowcmd</code> in active mode.</li>
-  <li><strong>ASR wiring.</strong> Drop Whisper (or Vosk) between <code>/g1/speech/utter</code> and a new <code>/g1/speech/intent</code> topic. Map intents → controller calls.</li>
-  <li><strong>rviz panel.</strong> Visualize the robot's URDF moving in real time, driven by <code>/g1/lowstate</code> and <code>robot_state_publisher</code>.</li>
-  <li><strong>CRC validation.</strong> <code>LowState_</code> carries a CRC; the bridge currently ignores it. Reject states with a bad CRC and surface a warning.</li>
-  <li><strong>Mode-machine cross-check.</strong> The G1's onboard controller refuses some commands depending on <code>mode_machine</code>; have the bridge predicate publish on it.</li>
-  <li><strong>Live URDF for inverse kinematics.</strong> Use <code>tf2</code> + a chest-mounted camera to solve "look at the speaker" as an IK problem over the head yaw + pitch joints.</li>
-  <li><strong>Battery alerts.</strong> Publish <code>sensor_msgs/BatteryState</code> from <code>lowstate.power_v</code>/<code>power_a</code>, and a service that returns "is it safe to take a 5-minute walk?"</li>
-  <li><strong>Telemetry stream.</strong> Replace the CLI <code>ros2 topic echo</code> with a tiny WebSocket dashboard reading <code>/g1/lowstate</code> over rosbridge.</li>
-</ol>
+<p>These are evening-sized projects on top of the existing <code>g1_bridge</code> and <code>g1_controller</code>. They make the system safer and more useful without adding new dependencies.</p>
 
-<p>Each of those is one or two evenings of work. None of them changes the safety contract.</p>
+<ul>
+  <li><strong>Walk-to-pose action.</strong> <code>humanoid_msgs/WalkToPose.action</code> is already defined. Wire <code>g1_controller</code> to send the SDK's high-level <code>rt/api/sport/request</code> and stream <code>SportModeState_</code> back as feedback. Reference: the <code>sport_client.py</code> examples in <a href="https://github.com/unitreerobotics/unitree_sdk2_python">unitree_sdk2_python</a>.</li>
+  <li><strong>Gain ramping.</strong> The lesson sends one damping command. A real controller ramps <code>kp</code> and <code>kd</code> with a smoothstep over ~200 ms so the robot doesn't snap. Add it as a helper in <code>g1_controller</code>; the test is "no audible servo whine when entering STAND."</li>
+  <li><strong>Watchdog.</strong> Auto-fall-back to damping if <code>/g1/lowstate</code> goes stale (&gt;100 ms). The G1 will literally fall if you stop publishing <code>lowcmd</code> in active mode — the watchdog is what protects you from a Python pause-the-world GC spike.</li>
+  <li><strong>CRC validation.</strong> <code>LowState_</code> carries a CRC the bridge currently ignores. Reject bad-CRC frames and surface them as a diagnostic. The CRC polynomial is in the SDK source.</li>
+  <li><strong>Battery service.</strong> Publish <code>sensor_msgs/BatteryState</code> from <code>lowstate.power_v</code> / <code>power_a</code> and a service that answers "is it safe to take a five-minute walk?" The G1 docs give the SOC curve.</li>
+</ul>
+
+<h3>Put the G1 in physics and train a controller</h3>
+
+<p>Covered in <a href="#physics">the section above</a>: install MuJoCo Menagerie, drop the G1 in a scene, watch it fall. Then pick one of these as a starting point for a learned balancing or walking controller:</p>
+
+<ul>
+  <li><a href="https://github.com/unitreerobotics/unitree_rl_mjlab">unitree_rl_mjlab</a> — Isaac-Lab-style RL on MJX, G1 included, fits a 16 GB GPU.</li>
+  <li><a href="https://github.com/google-deepmind/mujoco_playground">mujoco_playground</a> — DeepMind's MJX zoo (G1, H1, T1, Berkeley Humanoid, dexterous hands). <code>pip install playground</code>.</li>
+  <li><a href="https://github.com/InternRobotics/HoST">HoST</a> — "G1 stand up from any prone posture" (RSS 2025). The closest open analogue of push-recovery.</li>
+  <li><a href="https://github.com/YanjieZe/GMR">GMR</a> — retarget human MoCap to G1 joint angles. Useful for seeding a policy with motion priors.</li>
+  <li><a href="https://github.com/LeCAR-Lab/HumanoidVerse">HumanoidVerse</a> (CMU) — multi-simulator (IsaacGym, Genesis, Isaac Lab) scaffold with G1 12-DoF and 23-DoF envs.</li>
+</ul>
+
+<p>Deployment loop: train in sim, export the policy as TorchScript, wrap it as a node that subscribes to <code>/g1/lowstate</code> and publishes <code>/g1/lowcmd</code>. The safety latch you already built is what catches the policy when it produces nonsense — leave it engaged.</p>
+
+<h3>Voice in, action out: language as a control channel</h3>
+
+<p>You have TTS (lesson 08). Add ASR and intent parsing and the loop closes:</p>
+
+<ul>
+  <li><strong>ASR.</strong> <a href="https://github.com/ggerganov/whisper.cpp">whisper.cpp</a> runs on CPU and fits in ~500 MB for the <code>tiny.en</code> model. Drop a node between a mic capture and a new <code>/g1/speech/utter</code> topic.</li>
+  <li><strong>Intent routing.</strong> A small <code>rclpy</code> node that subscribes to <code>/g1/speech/utter</code> and maps strings to controller calls. Start with regex; graduate to a local LLM via <a href="https://github.com/ollama/ollama">ollama</a> if you want fuzzier matching. The Qwen 2.5 3B model fits in 4 GB VRAM and answers fast enough for conversational latency.</li>
+  <li><strong>MCP bridge.</strong> <a href="https://github.com/robotmcp/ros-mcp-server">ros-mcp-server</a> exposes ROS 2 topics and services as MCP tools, so any LLM client (Claude Desktop, Cursor, etc.) can drive the robot through the same safety-gated bridge.</li>
+</ul>
+
+<h3>Vision-Language-Action models on a single GPU</h3>
+
+<p>A Vision-Language-Action (VLA) model takes an image and a natural-language instruction and outputs joint targets. What you can actually run on a 16 GB GPU as of mid-2026:</p>
+
+<table>
+  <thead><tr><th>Model</th><th>Params</th><th>16 GB inference?</th><th>Native fit for G1</th></tr></thead>
+  <tbody>
+    <tr><td><a href="https://huggingface.co/lerobot/smolvla_base">SmolVLA</a></td><td>450 M</td><td>Comfortable</td><td>Tabletop arms, not humanoid</td></tr>
+    <tr><td><a href="https://octo-models.github.io/">Octo-Base</a></td><td>93 M</td><td>Trivial (&lt;4 GB)</td><td>7-DoF EEF deltas, manipulation</td></tr>
+    <tr><td><a href="https://github.com/openvla/openvla">OpenVLA-7B</a></td><td>7 B</td><td>Tight in bf16 (~16 GB); int4 fits ~7 GB</td><td>RT-X tokens, manipulation</td></tr>
+    <tr><td><a href="https://github.com/Physical-Intelligence/openpi">π0 / π0-FAST</a></td><td>~3 B</td><td>Yes (8 GB+ for inference)</td><td>Generic joint chunks; needs fine-tune for G1</td></tr>
+    <tr><td><a href="https://github.com/NVIDIA/Isaac-GR00T">GR00T N1.5 / N1.7</a></td><td>2.2 B</td><td>Inference fits 16 GB (NVIDIA's stated floor)</td><td><strong>Has a <code>UNITREE_G1_SONIC</code> embodiment head</strong></td></tr>
+    <tr><td>RT-2</td><td>55 B</td><td>No — weights aren't public</td><td>—</td></tr>
+  </tbody>
+</table>
+
+<p>Wiring a VLA into ROS 2 looks like wiring any other model: a node loads the weights at startup, subscribes to <code>/camera/image_raw</code> + <code>/joint_states</code> + an instruction topic, and publishes <code>JointTrajectory</code> or <code>JointState</code>. <a href="https://github.com/konu-droid/Isaac-GR00T-ros2">Isaac-GR00T-ros2</a> shows the GR00T variant; <a href="https://github.com/abdullahmortada/fastvla">fastvla</a> shows it for arms with MoveIt.</p>
+
+<div class="callout">
+<strong>"Can a VLA control the G1 on a 16 GB GPU yet?"</strong>
+Not as one turnkey stack. NVIDIA's <a href="https://github.com/NVlabs/GR00T-WholeBodyControl">GR00T-WholeBodyControl</a> is the closest production pipeline and its public examples target an RTX 4090. What 16 GB <em>does</em> support today: a VLA driving a 7-DoF arm (LeRobot + SmolVLA), or a VLA generating high-level navigation goals that feed a separately-trained locomotion policy. Putting the language model and the walking controller in the same forward pass is still research-grade on consumer cards.
+</div>
+
+<h3>Operator tooling</h3>
+
+<ul>
+  <li><strong>Foxglove dashboard.</strong> Replace the CLI <code>ros2 topic echo</code> with a <a href="https://foxglove.dev">Foxglove</a> layout that shows the URDF, the IMU, the topic graph, and a button per service. Foxglove reads <code>foxglove_bridge</code> over WebSocket and also opens <code>.mcap</code> bags directly.</li>
+  <li><strong>Bag-driven regression tests.</strong> Record 30 s of a real bring-up, replay it into the bridge in a CI test, assert that the safety latch fires when expected. <code>tests/integration/full_e2e.sh</code> already has the bag plumbing.</li>
+  <li><strong>Mode-machine cross-check.</strong> The G1's onboard controller refuses some commands depending on <code>mode_machine</code>. Have the bridge predicate every publish on the current mode and log refusals — that's a class of "why isn't it moving" bugs caught at the bridge instead of the controller.</li>
+</ul>
+
+<p>None of these change the safety contract. Anything that asks you to bypass the latch (or move it from the bridge into the controller) is a regression — the gate sits at the boundary on purpose.</p>
 </section>
 
 <footer>
