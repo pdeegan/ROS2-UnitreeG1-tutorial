@@ -34,17 +34,48 @@ else
 fi
 
 CYCLONE_XML="$REPO_ROOT/install/cyclonedds.xml"
+CYCLONE_G1_XML="$REPO_ROOT/install/cyclonedds_g1.xml"
 if [[ -f "$CYCLONE_XML" ]]; then
-  log "CycloneDDS profile already at $CYCLONE_XML"
+  log "CycloneDDS default profile already at $CYCLONE_XML"
 else
-  log "writing CycloneDDS profile → $CYCLONE_XML"
+  log "writing default (auto-detect) CycloneDDS profile → $CYCLONE_XML"
   cat > "$CYCLONE_XML" <<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Default CycloneDDS profile — auto-detects the network interface. -->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain Id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface autodetermine="true" priority="default" multicast="default" />
+      </Interfaces>
+      <AllowMulticast>true</AllowMulticast>
+      <MaxMessageSize>65500B</MaxMessageSize>
+    </General>
+    <Internal>
+      <Watermarks>
+        <WhcHigh>500kB</WhcHigh>
+      </Watermarks>
+    </Internal>
+  </Domain>
+</CycloneDDS>
+XML
+fi
+
+if [[ -f "$CYCLONE_G1_XML" ]]; then
+  log "CycloneDDS G1 profile already at $CYCLONE_G1_XML"
+else
+  log "writing G1-specific CycloneDDS profile → $CYCLONE_G1_XML"
+  cat > "$CYCLONE_G1_XML" <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
-  CycloneDDS profile for the Unitree G1 bridge.
+  CycloneDDS profile for talking to a REAL Unitree G1 over wired
+  ethernet on the 192.168.123.0/24 segment.
   Edit name="eth0" to match your robot-facing interface (run `ip -br addr`).
 -->
-<CycloneDDS xmlns="https://cdds.io/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
   <Domain Id="any">
     <General>
@@ -64,5 +95,7 @@ else
 XML
 fi
 
-log "set this before running G1 lessons against the real robot:"
+log "default profile (auto-detect):"
 log "  export CYCLONEDDS_URI=file://$CYCLONE_XML"
+log "real-G1 profile (wired 192.168.123.x; edit eth0 to match your iface):"
+log "  export CYCLONEDDS_URI=file://$CYCLONE_G1_XML"

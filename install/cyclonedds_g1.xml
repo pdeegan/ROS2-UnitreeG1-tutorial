@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  CycloneDDS profile for talking to a REAL Unitree G1 over wired
+  ethernet on the 192.168.123.0/24 segment.
+
+  Edit name="eth0" to match your robot-facing interface
+  (run `ip -br addr` to find it). On WSL2 you also need
+  `networkingMode=mirrored` in ~/.wslconfig — see docs/unitree_g1.md.
+
+  Use this profile by exporting:
+    export CYCLONEDDS_URI=file://$PWD/install/cyclonedds_g1.xml
+  before running anything that needs to reach the robot
+  (g1_bridge, g1_controller, etc.).
+
+  For toy sim and lessons, leave CYCLONEDDS_URI pointed at the
+  default install/cyclonedds.xml (auto-detect).
+-->
+<CycloneDDS xmlns="https://cdds.io/config"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+            xsi:schemaLocation="https://cdds.io/config https://raw.githubusercontent.com/eclipse-cyclonedds/cyclonedds/master/etc/cyclonedds.xsd">
+  <Domain Id="any">
+    <General>
+      <Interfaces>
+        <NetworkInterface autodetermine="false" name="eth0" priority="default" multicast="default" />
+      </Interfaces>
+      <AllowMulticast>true</AllowMulticast>
+      <MaxMessageSize>65500B</MaxMessageSize>
+    </General>
+    <Internal>
+      <Watermarks>
+        <WhcHigh>500kB</WhcHigh>
+      </Watermarks>
+    </Internal>
+  </Domain>
+</CycloneDDS>

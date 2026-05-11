@@ -51,8 +51,35 @@ fi
 unset _rt_had_nounset
 
 # CycloneDDS profile — only set if not already set.
+# The default profile uses autodetermine="true" so it works on any host.
+# For real-G1 work, manually export CYCLONEDDS_URI=file://...cyclonedds_g1.xml.
 if [[ -z "${CYCLONEDDS_URI:-}" && -f "$ROS_TUTORIAL_ROOT/install/cyclonedds.xml" ]]; then
   export CYCLONEDDS_URI="file://$ROS_TUTORIAL_ROOT/install/cyclonedds.xml"
+fi
+
+# Safety net: if CYCLONEDDS_URI points at a profile that pins a missing
+# interface (typical when someone copy-pastes the cyclonedds_g1.xml on a
+# host without that NIC), unset it so DDS falls back to auto-detect.
+# Without this safety net, EVERY ROS node fails to init.
+#
+# Use `|| true` on the grep pipeline — when the profile uses autodetect,
+# grep matches nothing and exits 1, which under pipefail+errexit would
+# abort the whole script.
+if [[ -n "${CYCLONEDDS_URI:-}" ]]; then
+  _rt_xml="${CYCLONEDDS_URI#file://}"
+  _rt_iface=""
+  if [[ -f "$_rt_xml" ]]; then
+    _rt_iface=$( { grep -oE 'autodetermine="false"[^/]*name="[^"]+"' "$_rt_xml" \
+                    | grep -oE 'name="[^"]+"' \
+                    | head -1 \
+                    | sed 's/name="\(.*\)"/\1/'; } 2>/dev/null || true )
+  fi
+  if [[ -n "$_rt_iface" ]] && ! ip -br addr show "$_rt_iface" &>/dev/null; then
+    echo "[ros2_env] WARN: CYCLONEDDS_URI pins iface '$_rt_iface' which doesn't exist;" >&2
+    echo "[ros2_env]       falling back to auto-detect (default profile)." >&2
+    export CYCLONEDDS_URI="file://$ROS_TUTORIAL_ROOT/install/cyclonedds.xml"
+  fi
+  unset _rt_iface _rt_xml
 fi
 
 # Use CycloneDDS as the RMW. RoboStack ships rmw_cyclonedds_cpp.
