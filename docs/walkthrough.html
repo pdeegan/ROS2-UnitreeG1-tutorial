@@ -1178,7 +1178,7 @@ A bag is the cheapest possible regression test. Record one good run, replay it d
   <h4>rqt_plot — live numeric plots</h4>
   <p>Pick any numeric topic field, watch it as a strip chart. Critical for tuning gains, watching state oscillation, debugging filters.</p>
   <pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_plot.sh \
-       /joint_states/position[0]</pre>
+       /joint_states/position[15]</pre>
 </div>
 <div class="toolcard">
   <h4>rqt_console — log viewer</h4>
@@ -1193,25 +1193,38 @@ A bag is the cheapest possible regression test. Record one good run, replay it d
 </div>
 </div>
 
+<figure class="shot">
+  <img src="screenshots/rqt_graph.png" alt="rqt_graph live topic graph showing the G1 sim + bridge + safety latch">
+  <figcaption><strong>rqt_graph</strong> with the G1 sim + bridge + safety latch all running. Two parallel data flows are immediately legible: <code>safety_latch → /g1/safety_engaged → g1_bridge</code> (the latched safety topic) and <code>joint_animator → /joint_states → robot_state_publisher</code> (the kinematic chain).</figcaption>
+</figure>
+
+<figure class="shot">
+  <img src="screenshots/rqt_plot.png" alt="Live strip chart of six G1 joints during the walk pattern">
+  <figcaption><strong>Live joint plot</strong> — six G1 joints in the <code>walk</code> pattern, sampled at 30 Hz over 5 seconds. The hip pitches (left/right) are anti-phase, as are the shoulders (counter-swinging arms), and the knees flex once per gait cycle. <code>rqt_plot</code> draws this same chart inside Qt; the rendering you see here is from the equivalent <code>matplotlib</code> consumer of <code>/joint_states</code>.</figcaption>
+</figure>
+
+<h3>The full TF tree, rendered to PDF</h3>
+
+<p>The single most useful diagnostic for "is my URDF right?" is <strong><code>tf2_tools view_frames</code></strong> — it walks the live TF graph and produces a PDF showing every parent→child link with the broadcaster, rate, and buffer state.</p>
+
+<pre><span class="pmt">$</span> ros2 run tf2_tools view_frames
+<span class="com"># produces frames_&lt;timestamp&gt;.pdf in the current dir</span></pre>
+
+<figure class="shot">
+  <img src="screenshots/tf_tree.png" alt="The full Unitree G1 TF tree — 41 frames">
+  <figcaption><strong>TF tree</strong> for the G1 — all 41 link frames, rooted at <code>pelvis</code>. Walks down through the waist (yaw → roll → pitch) into <code>torso_link</code>, branches to head + both shoulders, and the leg branch goes hip → knee → ankle for each side. If a frame is missing from this graph, the corresponding link won't render in rviz2 — first place to look when "the body looks collapsed."</figcaption>
+</figure>
+
 <h3>One command for the live snapshot</h3>
 
 <p>The wrapper <code>scripts/tools/inspect.sh</code> bundles a "what is going on right now" report — every node, every topic + type, every service, every action, every parameter, plus rate samples for the top topics:</p>
 
-<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/inspect.sh
+<pre><span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/inspect.sh</pre>
 
-── nodes ──
-/joint_animator
-/robot_state_publisher
-/rviz2
-
-── topics + types ──
-/joint_states              sensor_msgs/msg/JointState
-/parameter_events          rcl_interfaces/msg/ParameterEvent
-/robot_description         std_msgs/msg/String
-/rosout                    rcl_interfaces/msg/Log
-/tf                        tf2_msgs/msg/TFMessage
-/tf_static                 tf2_msgs/msg/TFMessage
-…</pre>
+<figure class="shot">
+  <img src="screenshots/inspect_snapshot.png" alt="inspect.sh terminal output showing the live G1 system">
+  <figcaption><strong>inspect.sh</strong> — one shot, every node + every topic with its type + every service. This is what you type when you walk into a running system you didn't start, and want to know what's there in 2 seconds. Above: G1 sim + bridge + safety latch all alive; <code>/g1/lowstate</code>, <code>/g1/lowcmd</code>, <code>/g1/safety_engaged</code> all advertised; full parameter API exposed by every node.</figcaption>
+</figure>
 
 <p>Type that whenever you walk into someone else's running system.</p>
 
