@@ -1297,14 +1297,14 @@ average rate: 30.000      <span class="com"># publisher is now ros2 bag, not the
 <span class="pmt">$</span> ros2 run tf2_tools view_frames
 <span class="com"># produces frames.pdf — 41 links, 40 joints in the tree</span></pre>
 
-<h3>One step further — Gazebo Sim physics (opt-in)</h3>
+<h3>One step further — Gazebo Sim physics (smoke test only)</h3>
 
-<p>The env ships the <code>gz</code> CLI core, but the <strong>sim</strong> subcommand (the actual physics engine) is a separate plugin you have to install. When it's missing, <code>gz sim</code> just prints its help text. Install it:</p>
+<p>The env ships the <code>gz</code> CLI core, but the <strong>sim</strong> subcommand (the actual physics engine) is a separate plugin. When it's missing, <code>gz sim</code> just prints its help text. Install it and run the canonical shapes scene:</p>
 <pre><span class="pmt">$</span> ~/.local/bin/micromamba install -y -n ros2_jazzy \
        -c conda-forge gz-harmonic
 <span class="pmt">$</span> gz sim --version
-<span class="pmt">$</span> gz sim shapes.sdf      <span class="com"># click ▶ to step physics</span></pre>
-<p>Driving the G1 URDF in Gazebo needs two extra pieces beyond the install: a <code>&lt;gazebo&gt;</code> block in the URDF declaring contact + inertia, and the <code>ros_gz_bridge</code> package to translate gz topics ↔ ROS 2 topics. Out of scope for this tutorial, but the URDF you have is the same one Unitree distributes for mujoco_ros — it's the right starting point. See <a href="#further">"What to build next"</a>.</p>
+<span class="pmt">$</span> gz sim shapes.sdf      <span class="com"># click ▶ to step physics on three falling shapes</span></pre>
+<p>That's the smoke test. To put the G1 itself in physics, use MuJoCo — see <a href="#physics">"G1 in physics"</a> below for why Unitree (and every other major humanoid vendor) ships official MuJoCo and Isaac Lab assets but no Gazebo wiring for their robots.</p>
 
 <div class="callout ok">
 <strong>What you have at this point</strong>
@@ -1509,11 +1509,26 @@ A four-node system (bridge, safety, controller, client) where motion commands fl
 
 <p>That's the entire setup. No URDF rewrite, no <code>&lt;gazebo&gt;</code> tags, no transmission plumbing. The Unitree-published model includes inertias, contact pairs, and motor limits good enough that the falling pose matches a real G1 with the power cut.</p>
 
-<h3>Why not Gazebo</h3>
+<h3>Why this tutorial doesn't use Gazebo for the G1</h3>
 
-<p>The same URDF in Gazebo doesn't work out of the box: <a href="https://github.com/unitreerobotics/unitree_ros/issues/129">unitree_ros#129</a> documents the gap — no <code>&lt;gazebo&gt;</code> blocks, no transmission entries, no <code>ros2_control</code> YAML. Closing that gap is a few days of work for a stationary G1 and weeks for a walking one. If you don't have a strong reason to use Gazebo (e.g., a depth-camera plugin you already trust), skip it.</p>
+<p>Gazebo is the default ROS 2 simulator for mobile bases, arms, and sensor-rich scenes, and it stays the right choice when you need <code>ros_gz_bridge</code>, depth-camera plugins, lidar with realistic noise, or multi-robot worlds. For <em>humanoid bipeds specifically</em>, the field has moved on. Every major humanoid platform shipping in 2025–2026 publishes official sim assets for MuJoCo and/or Isaac Lab first, and leaves Gazebo to community ports if it exists at all:</p>
 
-<p>Isaac Lab is the other path, and the right one if you want to <em>train</em> a balancing policy with PPO at thousands of parallel envs. <a href="https://github.com/unitreerobotics/unitree_sim_isaaclab">unitree_sim_isaaclab</a> ships ready-made G1 environments. NVIDIA's stated floor is 12 GB VRAM, which makes a 16 GB card workable for single-env work but tight for high-resolution sensors. Plan a day to install on a clean Ubuntu host; WSL2 fights the RTX renderer.</p>
+<table>
+  <thead><tr><th>Platform</th><th>Official sim</th><th>Official Gazebo support?</th></tr></thead>
+  <tbody>
+    <tr><td>Unitree G1, H1, H1-2</td><td>MuJoCo + Isaac Lab</td><td>No — URDF is kinematic-only, no <code>&lt;gazebo&gt;</code> tags, no transmissions, no <code>ros2_control</code> YAML</td></tr>
+    <tr><td>Boston Dynamics Atlas</td><td>Proprietary + MuJoCo (community)</td><td>No (the DRC-era <code>drcsim</code> stack froze at ROS Kinetic)</td></tr>
+    <tr><td>Agility Cassie, Digit</td><td>MuJoCo + Isaac Lab</td><td>No</td></tr>
+    <tr><td>Booster T1, Fourier GR-1 / N1, Apptronik Apollo</td><td>MuJoCo (<a href="https://github.com/google-deepmind/mujoco_menagerie">mujoco_menagerie</a>)</td><td>No</td></tr>
+    <tr><td>ROBOTIS OP3</td><td>Gazebo</td><td>Yes — the one mainstream humanoid still officially on Gazebo</td></tr>
+  </tbody>
+</table>
+
+<p>Two reasons drive the shift. First, contact dynamics: MuJoCo's soft-contact solver handles the stiff, fast, intermittent foot-to-floor regime more cleanly than DART or ODE (which is what Gazebo Harmonic ships). The <a href="https://leggedrobotics.github.io/SimBenchmark/">SimBenchmark</a> comparison and the 2023 <a href="https://arxiv.org/abs/2304.06372">contact-models survey</a> both rank MuJoCo first for legged contact accuracy. Second, parallelism: Isaac Lab routinely trains a 29-DoF G1 across 4,096 parallel envs on a single GPU. Gazebo is CPU-bound and single-env, which is the wrong shape for the RL workflow that produced the current generation of humanoid policies.</p>
+
+<p>For the G1 in particular, getting a passable Gazebo stand-still demo is days of work (write the <code>&lt;gazebo&gt;</code> blocks, transmissions, <code>gz_ros2_control</code> YAML, harden inertials for DART). A walking demo on top of that is weeks. If you want to spend that time, do — Gazebo's sensor plugins are still the cleanest ROS-2-native path if you need them. Otherwise the MuJoCo route above is the path of least resistance.</p>
+
+<p>Isaac Lab is the third option, and the right one if you want to <em>train</em> a balancing policy with PPO at the parallel scale the field actually uses. <a href="https://github.com/unitreerobotics/unitree_sim_isaaclab">unitree_sim_isaaclab</a> ships ready-made G1 environments. NVIDIA's stated floor is 12 GB VRAM, which makes a 16 GB card workable for single-env work but tight for high-resolution sensors. Plan a day to install on a clean Ubuntu host; WSL2 fights the RTX renderer.</p>
 
 <h3>From "it falls" to "it balances"</h3>
 
@@ -1604,7 +1619,6 @@ Not as one turnkey stack. NVIDIA's <a href="https://github.com/NVlabs/GR00T-Whol
 <h3>Operator tooling</h3>
 
 <ul>
-  <li><strong>Foxglove dashboard.</strong> Replace the CLI <code>ros2 topic echo</code> with a <a href="https://foxglove.dev">Foxglove</a> layout that shows the URDF, the IMU, the topic graph, and a button per service. Foxglove reads <code>foxglove_bridge</code> over WebSocket and also opens <code>.mcap</code> bags directly.</li>
   <li><strong>Bag-driven regression tests.</strong> Record 30 s of a real bring-up, replay it into the bridge in a CI test, assert that the safety latch fires when expected. <code>tests/integration/full_e2e.sh</code> already has the bag plumbing.</li>
   <li><strong>Mode-machine cross-check.</strong> The G1's onboard controller refuses some commands depending on <code>mode_machine</code>. Have the bridge predicate every publish on the current mode and log refusals — that's a class of "why isn't it moving" bugs caught at the bridge instead of the controller.</li>
 </ul>
