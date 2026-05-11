@@ -64,7 +64,8 @@ case "$TUTORIAL_PKG" in
 
   brew)
     log "macOS / Homebrew detected"
-    REQUIRED=(curl bzip2 git cmake pkg-config python@3.12)
+    # portaudio is needed by `sounddevice` for the speech-playback demo (g1_speech).
+    REQUIRED=(curl bzip2 git cmake pkg-config python@3.12 portaudio)
     missing=()
     for pkg in "${REQUIRED[@]}"; do
       brew list "$pkg" &>/dev/null || missing+=("$pkg")

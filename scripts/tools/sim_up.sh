@@ -10,7 +10,7 @@
 #   bash scripts/tools/sim_up.sh wave false       # headless (no rviz)
 #
 # Args:
-#   $1  pattern = wave | walk | squat | tpose | stretch | zero  (default: wave)
+#   $1  pattern = wave | walk | squat | tpose | stretch | zero  (default: wave; 6 patterns)
 #   $2  rviz    = true | false                                  (default: true)
 set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"

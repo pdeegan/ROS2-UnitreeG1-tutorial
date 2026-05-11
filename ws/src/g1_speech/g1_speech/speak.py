@@ -37,6 +37,7 @@ from __future__ import annotations
 import os
 import tempfile
 import time
+import wave
 from pathlib import Path
 
 import rclpy
@@ -91,8 +92,6 @@ class Speaker(Node):
     def _synthesize_to_wav(self, text: str) -> str | None:
         if self._piper is None:
             # Write a silent placeholder so callers can verify the path.
-            import io
-            import wave
             ts = int(time.time())
             path = f"/tmp/g1_speak_{ts}.wav"
             with wave.open(path, "wb") as w:
@@ -104,8 +103,11 @@ class Speaker(Node):
 
         fd, path = tempfile.mkstemp(suffix=".wav", prefix="g1_speak_")
         os.close(fd)
-        with open(path, "wb") as f:
-            self._piper.synthesize_wav(text, f)
+        # piper's synthesize_wav writes through a wave.Wave_write handle,
+        # not a raw binary file. Calling it with a plain open(..., "wb")
+        # silently produces a zero-byte file.
+        with wave.open(path, "wb") as w:
+            self._piper.synthesize_wav(text, w)
         return path
 
     def _play(self, wav_path: str) -> None:

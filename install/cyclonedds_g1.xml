@@ -3,9 +3,12 @@
   CycloneDDS profile for talking to a REAL Unitree G1 over wired
   ethernet on the 192.168.123.0/24 segment.
 
-  Edit name="eth0" to match your robot-facing interface
-  (run `ip -br addr` to find it). On WSL2 you also need
-  `networkingMode=mirrored` in ~/.wslconfig — see docs/unitree_g1.md.
+  Edit name="eth0" to match your robot-facing interface:
+    - Linux / WSL2:  run `ip -br addr` (typical: eth0, enp3s0)
+    - macOS:         run `ifconfig` or `networksetup -listallhardwareports`
+                     (typical: en0 for Wi-Fi, en7 for USB-Ethernet)
+  On WSL2 you also need `networkingMode=mirrored` in ~/.wslconfig —
+  see docs/unitree_g1.md.
 
   Use this profile by exporting:
     export CYCLONEDDS_URI=file://$PWD/install/cyclonedds_g1.xml

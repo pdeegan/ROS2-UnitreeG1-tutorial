@@ -521,7 +521,13 @@ else
 fi
 
 if command -v gz > /dev/null 2>&1; then
-  ok "gz (Gazebo Sim) CLI available at $(command -v gz)"
+  # gz core may be installed without the `sim` subcommand. Check if sim
+  # is actually registered (i.e. gz-harmonic or gz-fortress is present).
+  if gz sim --version 2>/dev/null | grep -qE '^[0-9]+\.'; then
+    ok "gz sim available ($(gz sim --version 2>/dev/null | head -1))"
+  else
+    skip "gz core present but \`gz sim\` plugin not installed (mamba install gz-harmonic for Gazebo)"
+  fi
 else
   skip "gz not on PATH"
 fi

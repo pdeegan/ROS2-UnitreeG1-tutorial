@@ -9,10 +9,10 @@ Usage::
     ros2 launch tutorial_sim g1_sim.launch.py rviz:=false
     ros2 launch tutorial_sim g1_sim.launch.py urdf:=g1_29dof_lock_waist.urdf
 
-The animator publishes 6 joints by default (the same names as the toy
-URDF) — so on the G1 you'll see the shoulders, elbows, and hips move
-while the rest of the body sits at zero. That's the simplest way to
-animate a real URDF without a full IK / motion library.
+The animator publishes all 29 G1 joints. Each pattern (wave / walk /
+squat / tpose / stretch / zero) sets a subset of joints from a small
+analytic function; unset joints stay at 0.0. That's the simplest way
+to animate a real URDF without a full IK / motion library.
 """
 
 from __future__ import annotations
@@ -105,7 +105,7 @@ def generate_launch_description() -> LaunchDescription:
         ),
         DeclareLaunchArgument(
             "pattern", default_value="wave",
-            description="Animation pattern: wave | walk | zero",
+            description="Animation pattern: wave | walk | squat | tpose | stretch | zero",
         ),
         DeclareLaunchArgument(
             "rviz", default_value="true",

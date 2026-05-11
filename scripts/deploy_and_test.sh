@@ -6,8 +6,7 @@
 # commands at the end.
 #
 # Usage:
-#   bash scripts/deploy_and_test.sh                 # default — toy URDF only
-#   bash scripts/deploy_and_test.sh --with-g1       # also fetches + builds the real Unitree G1 URDF (~150 MB)
+#   bash scripts/deploy_and_test.sh                 # fetches G1 URDF (~150 MB) on first run, builds, runs e2e
 
 set -uo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"

@@ -291,6 +291,13 @@ footer {
   transition: opacity .12s, color .12s, border-color .12s;
   user-select: none;
 }
+/* The block-level "copy commands" button lives in the top-right corner
+   of the wrap. If the first cmd-line's per-line button sits at the
+   same right edge it would overlay the block button — push the first
+   line's button further left so the two are always distinct. */
+.cmd-line:first-child .line-copy {
+  right: 7.5rem;
+}
 .cmd-line:hover .line-copy { opacity: .95; }
 .cmd-line .line-copy:hover {
   color: var(--accent);
@@ -440,6 +447,7 @@ footer {
     <li><a href="#L07"><span class="num">07</span>G1 bridge<span class="sub">DDS ↔ ROS 2</span></a></li>
     <li><a href="#L08"><span class="num">08</span>Voice I/O<span class="sub">listen &amp; speak</span></a></li>
     <li><a href="#L09"><span class="num">09</span>High-level control<span class="sub">sit, stand, wave</span></a></li>
+    <li><a href="#bigpicture"><span class="num">▸</span>Full system graph<span class="sub">every node + topic</span></a></li>
     <li><a href="#further"><span class="num">→</span>What to build next</a></li>
   </ol>
 </nav>
@@ -1289,11 +1297,14 @@ average rate: 30.000      <span class="com"># publisher is now ros2 bag, not the
 <span class="pmt">$</span> ros2 run tf2_tools view_frames
 <span class="com"># produces frames.pdf — 41 links, 40 joints in the tree</span></pre>
 
-<h3>One step further — Gazebo Sim physics</h3>
+<h3>One step further — Gazebo Sim physics (opt-in)</h3>
 
-<p>The env also ships <strong>Gazebo Sim</strong> (modern <code>gz</code>, formerly Ignition). It's a full physics simulator with gravity, contacts, and collisions:</p>
-<pre><span class="pmt">$</span> gz sim shapes.sdf      <span class="com"># canonical demo world</span></pre>
-<p>Driving the G1 URDF in Gazebo needs two extra pieces: a <code>&lt;gazebo&gt;</code> block in the URDF declaring contact + inertia, and the <code>ros_gz_bridge</code> package to translate gz topics ↔ ROS 2 topics. Out of scope for this tutorial, but the URDF you have is the same one Unitree distributes for mujoco_ros — it's the right starting point. See <a href="#further">"What to build next"</a>.</p>
+<p>The env ships the <code>gz</code> CLI core, but the <strong>sim</strong> subcommand (the actual physics engine) is a separate plugin you have to install. When it's missing, <code>gz sim</code> just prints its help text. Install it:</p>
+<pre><span class="pmt">$</span> ~/.local/bin/micromamba install -y -n ros2_jazzy \
+       -c conda-forge gz-harmonic
+<span class="pmt">$</span> gz sim --version
+<span class="pmt">$</span> gz sim shapes.sdf      <span class="com"># click ▶ to step physics</span></pre>
+<p>Driving the G1 URDF in Gazebo needs two extra pieces beyond the install: a <code>&lt;gazebo&gt;</code> block in the URDF declaring contact + inertia, and the <code>ros_gz_bridge</code> package to translate gz topics ↔ ROS 2 topics. Out of scope for this tutorial, but the URDF you have is the same one Unitree distributes for mujoco_ros — it's the right starting point. See <a href="#further">"What to build next"</a>.</p>
 
 <div class="callout ok">
 <strong>What you have at this point</strong>
@@ -1376,15 +1387,44 @@ The bridge's safety check is one layer. The <a href="#L09">controller</a> in les
 
 <p>The flow downstream of this is your choice &mdash; ASR, intent extraction, controller dispatch. We don't bake an ASR into the tutorial because the right one (Whisper? Vosk? cloud?) is a project-specific call.</p>
 
-<p>For voice out we use <strong>Piper</strong> &mdash; offline TTS, runs on CPU faster than real-time, ships its own voice models. Exposed as a service:</p>
+<p>For voice out we use <strong>Piper</strong> — offline TTS, runs on CPU faster than real-time, ships its own voice models. Exposed as a ROS 2 service:</p>
 
+<h3>One-time setup — download a Piper voice (~70 MB)</h3>
+<pre><span class="pmt">$</span> <span class="fn">source</span> scripts/ros2_env.sh
+<span class="pmt">$</span> <span class="fn">mkdir</span> -p ~/.cache/piper-voices
+<span class="pmt">$</span> python -m piper.download_voices en_US-lessac-medium \
+       --download-dir ~/.cache/piper-voices/</pre>
+
+<h3>Bring the speaker up</h3>
 <pre><span class="pmt">$</span> ros2 run g1_speech speak
-[INFO] speaker up (backend=piper)
-<span class="pmt">$</span> ros2 service call /g1/speech/say std_srvs/srv/Trigger
-[INFO] saying: <span class="str">'Hello. I am the G1. How can I help?'</span>
-<span class="com"># audio plays through the default output device</span></pre>
+[INFO] speaker up (backend=piper)</pre>
 
-<p>If <code>piper-tts</code> isn't installed (the tutorial's install layer makes it optional), the node falls back to a WAV stub at <code>/tmp/g1_speak_*.wav</code> and logs the path &mdash; useful for headless smoke testing.</p>
+<p>If piper isn't installed or no voice is downloaded, the node falls back to a silent-WAV stub backend (still produces a file at <code>/tmp/g1_speak_*.wav</code> and logs the path — useful for headless smoke tests).</p>
+
+<h3>Make the G1 talk</h3>
+<p>In a second shell, call the service:</p>
+<pre><span class="pmt">$</span> ros2 service call /g1/speech/say std_srvs/srv/Trigger
+response:
+std_srvs.srv.Trigger_Response(success=True, message="spoke 'Hello. I am the G1. How can I help?' (wav at /tmp/g1_speak_1778465829.wav)")</pre>
+
+<p>You'll hear the G1 speak through the default audio device. The same wav also lands at <code>/tmp/g1_speak_&lt;ts&gt;.wav</code> for offline inspection. Verify it really is audio (not stub silence):</p>
+<pre><span class="pmt">$</span> python3 -c <span class="str">"import glob, wave, numpy as np; p=sorted(glob.glob('/tmp/g1_speak_*.wav'))[-1]; w=wave.open(p,'rb'); d=np.frombuffer(w.readframes(w.getnframes()), dtype=np.int16); print(f'{p}: duration={w.getnframes()/w.getframerate():.2f}s, std={d.std():.0f}')"</span>
+<span class="com"># Expect: duration ≈ 2-3s, std ≈ a few thousand (real audio).</span>
+<span class="com"># If std is 0, you got the silent-WAV stub — install piper-tts and re-run.</span></pre>
+
+<h3>Customize the spoken text</h3>
+<p>The <code>text</code> parameter holds what gets spoken on the next service call:</p>
+<pre><span class="pmt">$</span> ros2 param set /speaker text <span class="str">"Safety engaged. Ready for motion."</span>
+<span class="pmt">$</span> ros2 service call /g1/speech/say std_srvs/srv/Trigger
+<span class="com"># Now the G1 says exactly that.</span>
+
+<span class="pmt">$</span> ros2 param set /speaker voice <span class="str">"en_US-amy-medium"</span>
+<span class="com"># Swap voices at runtime — download the new model the same way.</span></pre>
+
+<div class="callout">
+<strong>Why a service, not a topic</strong>
+"Say this" is a request/reply: the caller wants to know "did it speak, and what wav?" — that's the shape of <code>std_srvs/Trigger</code>. A streaming TTS pipeline (long generation, cancellable) would be an action; the simple smoke-test path uses a service.
+</div>
 </section>
 
 <!-- ============================================================ -->
@@ -1414,16 +1454,16 @@ The bridge's safety check is one layer. The <a href="#L09">controller</a> in les
     <span class="kw">if not</span> self._safety_engaged:
         resp.success = <span class="kw">False</span>
         resp.message = <span class="str">"refused: safety_engaged=False"</span>
-        <span class="kw">return</span> resp                <span class="com"># layer 1: controller-side gate</span>
+        <span class="kw">return</span> resp                <span class="com"># safety layer 1: controller-side latch check</span>
 
     <span class="kw">if</span> self._cmd_pub <span class="kw">is None</span>:
         resp.success = <span class="kw">False</span>
         resp.message = <span class="str">"refused: controller not active"</span>
-        <span class="kw">return</span> resp                <span class="com"># layer 2: lifecycle gate</span>
+        <span class="kw">return</span> resp                <span class="com"># lifecycle gate (separate concern, not the safety latch)</span>
 
     cmd = LowCmd()
     cmd.motor_cmd = [_damping_motor() <span class="kw">for</span> _ <span class="kw">in</span> <span class="kw">range</span>(<span class="num">29</span>)]
-    self._cmd_pub.publish(cmd)        <span class="com"># bridge enforces layer 3</span>
+    self._cmd_pub.publish(cmd)        <span class="com"># safety layer 2: bridge re-checks the latch before forwarding</span>
     resp.success = <span class="kw">True</span>
     <span class="kw">return</span> resp</pre>
 
@@ -1444,6 +1484,42 @@ The bridge's safety check is one layer. The <a href="#L09">controller</a> in les
 <div class="callout ok">
 <strong>What you have now</strong>
 A four-node system (bridge, safety, controller, client) where motion commands flow through three independent gates &mdash; controller activation, safety engagement, bridge forwarding &mdash; and any one of them dropping the command is enough to keep the robot still. That's the production shape; the lesson code is the minimal version.
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="lesson" id="bigpicture">
+<header>
+  <div class="crumb">▸ the whole system</div>
+  <h2>The full G1 system — every node + every topic</h2>
+  <p class="summary">When you've worked through the lessons, here's what the complete topic graph looks like with the sim, the bridge, the safety latch, and the speaker all running simultaneously.</p>
+</header>
+
+<p>Run all five nodes together to see the system you've built:</p>
+
+<pre><span class="pmt">$</span> <span class="fn">source</span> scripts/ros2_env.sh
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/sim_up.sh wave false &amp;          <span class="com"># sim + animator + RSP (headless)</span>
+<span class="pmt">$</span> G1_BRIDGE_FAKE=1 ros2 run g1_bridge bridge &amp;        <span class="com"># DDS↔ROS bridge (fake mode)</span>
+<span class="pmt">$</span> ros2 run g1_bridge safety &amp;                          <span class="com"># safety latch</span>
+<span class="pmt">$</span> ros2 run g1_speech speak &amp;                           <span class="com"># piper TTS speaker</span>
+<span class="pmt">$</span> ros2 service call /g1/safety/engage std_srvs/srv/Trigger  <span class="com"># engage safety</span>
+<span class="pmt">$</span> <span class="fn">bash</span> scripts/tools/rqt_graph.sh                       <span class="com"># open the live graph</span></pre>
+
+<figure class="shot">
+  <img src="screenshots/rqt_graph_full.png" alt="Full G1 system topic graph — 5 nodes, every topic">
+  <figcaption><strong>The full G1 graph</strong> — five nodes live: <code>safety_latch</code> publishing the latched <code>/g1/safety_engaged</code> topic to <code>g1_bridge</code>; <code>joint_animator</code> streaming <code>/joint_states</code> to <code>robot_state_publisher</code> (which republishes <code>/tf</code>); <code>speaker</code> standing by with its <code>/g1/speech/say</code> service. Services don't draw as edges in rqt_graph by default (it shows only topic traffic) — that's why <code>/speaker</code> sits alone. Add <code>/g1_controller</code> (lesson 09) and you also see the <code>/g1/lowcmd</code> publish edge into the bridge.</figcaption>
+</figure>
+
+<p>Switch the rqt view to <strong>Nodes/Topics (active)</strong> to also see the latched topics + bridge state topics. Toggle <strong>Group: Namespaces</strong> to collapse <code>/g1/*</code> into one bubble. Press the refresh icon any time nodes come and go.</p>
+
+<h3>Tear down cleanly</h3>
+<pre><span class="pmt">$</span> ros2 service call /g1/safety/release std_srvs/srv/Trigger    <span class="com"># release the latch</span>
+<span class="pmt">$</span> kill %1 %2 %3 %4                                              <span class="com"># bring down the background nodes</span>
+<span class="pmt">$</span> ros2 node list                                                <span class="com"># should be empty (or just /rosout)</span></pre>
+
+<div class="callout ok">
+<strong>This is the system you've built</strong>
+Five small processes, one shared topic graph, one structural safety latch, one TTS path. Swap <code>G1_BRIDGE_FAKE=1</code> off and connect a real G1 over wired ethernet on 192.168.123.x and the same graph drives the actual robot — only the source of <code>/g1/lowstate</code> changes.
 </div>
 </section>
 
@@ -1628,14 +1704,51 @@ function addPerLineButtons(pre) {
     return t.html;
   }).join("\n");
 
-  // Attach handlers
-  pre.querySelectorAll(".cmd-line").forEach(line => {
+  // Attach handlers. For each $-prompt line, the copy must include
+  // any backslash-continued non-prompt lines that follow it (so that
+  // `cmd \\` + `--flag` + `--flag2` all copy as one shell command).
+  const cmdLines = Array.from(pre.querySelectorAll(".cmd-line"));
+  cmdLines.forEach((line, idx) => {
     const btn = line.querySelector(".line-copy");
     if (!btn) return;
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const txt = line.textContent.replace(/copy$/,"").replace(PROMPT_RE,"").replace(/\\\s*$/,"").trim();
+
+      // Gather text of this $-prompted line and any following non-$
+      // continuation lines (in DOM order between this cmd-line and
+      // the next cmd-line sibling). Walk the parent's child nodes.
+      let pieces = [];
+      const firstText = line.textContent
+        .replace(/copy$/, "")
+        .replace(PROMPT_RE, "");
+      pieces.push(firstText);
+
+      // Walk siblings AFTER this cmd-line until the next cmd-line.
+      let sib = line.nextSibling;
+      while (sib) {
+        if (sib.nodeType === Node.ELEMENT_NODE && sib.classList && sib.classList.contains("cmd-line")) break;
+        const txt = sib.nodeType === Node.TEXT_NODE ? sib.nodeValue : sib.textContent;
+        if (txt !== undefined) pieces.push(txt);
+        sib = sib.nextSibling;
+      }
+
+      // Join, strip trailing backslash-newlines, collapse to one logical
+      // command per blank line. We assume continuation = trailing `\`.
+      let joined = pieces.join("").replace(/\r/g, "");
+      // Stop at the first blank line (= end of the logical command block)
+      const lines = joined.split("\n");
+      const out = [];
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i];
+        // Skip pure-comment continuation lines? Keep them for fidelity.
+        if (i > 0 && /^\s*$/.test(l)) break;
+        out.push(l);
+        // If the previous line did NOT end with a backslash and we already
+        // emitted at least the first command line, stop here.
+        if (i > 0 && !/\\\s*$/.test(lines[i - 1])) break;
+      }
+      const txt = out.join("\n").replace(/\\\s*\n/g, " ").trim();
       copyText(txt, btn);
     });
   });

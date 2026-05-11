@@ -145,10 +145,11 @@ source scripts/ros2_env.sh
 bash scripts/tools/sim_up.sh
 #   should see: rviz2 window with orange-and-blue humanoid waving
 
-# 2. Real Unitree G1 in rviz (after fetch)
+# 2. Real Unitree G1 in rviz (after fetch) — G1 URDF is the default;
+#    pass walk/squat/tpose for other patterns
 bash install/06_fetch_g1_assets.sh
 bash scripts/ros2_build.sh g1_description
-bash scripts/tools/sim_up.sh g1
+bash scripts/tools/sim_up.sh        # default pattern (wave)
 #   should see: rviz2 window with the actual G1 model, arms moving
 
 # 3. The live topic graph

@@ -238,7 +238,7 @@ bash scripts/tools/bag_play.sh         # replay newest bag
 ```bash
 bash install/06_fetch_g1_assets.sh
 bash scripts/ros2_build.sh g1_description
-bash scripts/tools/sim_up.sh g1
+bash scripts/tools/sim_up.sh        # G1 is the default; pass walk/squat/tpose/wave for other patterns
 ```
 
 ---

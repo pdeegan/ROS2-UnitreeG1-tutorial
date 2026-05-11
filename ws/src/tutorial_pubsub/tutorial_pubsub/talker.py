@@ -21,6 +21,11 @@ Then in a second shell::
     ros2 topic echo /joint_state
     ros2 topic hz /joint_state          # confirm 50 Hz
     ros2 topic info /joint_state -v     # see the QoS profile in use
+
+Note: this lesson uses the singular ``/joint_state`` (not the
+conventional plural ``/joint_states``) deliberately, so it can run
+alongside ``tutorial_sim`` without two publishers fighting over the
+same topic. Real production code should use ``/joint_states``.
 """
 
 from __future__ import annotations

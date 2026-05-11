@@ -74,10 +74,23 @@ if [[ -n "${CYCLONEDDS_URI:-}" ]]; then
                     | head -1 \
                     | sed 's/name="\(.*\)"/\1/'; } 2>/dev/null || true )
   fi
-  if [[ -n "$_rt_iface" ]] && ! ip -br addr show "$_rt_iface" &>/dev/null; then
-    echo "[ros2_env] WARN: CYCLONEDDS_URI pins iface '$_rt_iface' which doesn't exist;" >&2
-    echo "[ros2_env]       falling back to auto-detect (default profile)." >&2
-    export CYCLONEDDS_URI="file://$ROS_TUTORIAL_ROOT/install/cyclonedds.xml"
+  if [[ -n "$_rt_iface" ]]; then
+    # Cross-OS iface probe: prefer `ip` (Linux), fall back to `ifconfig` (macOS/BSD).
+    _rt_iface_ok=0
+    if command -v ip >/dev/null 2>&1; then
+      ip -br addr show "$_rt_iface" &>/dev/null && _rt_iface_ok=1
+    elif command -v ifconfig >/dev/null 2>&1; then
+      ifconfig "$_rt_iface" &>/dev/null && _rt_iface_ok=1
+    else
+      # Neither tool present — assume OK rather than triggering a false-positive fallback.
+      _rt_iface_ok=1
+    fi
+    if [[ $_rt_iface_ok -eq 0 ]]; then
+      echo "[ros2_env] WARN: CYCLONEDDS_URI pins iface '$_rt_iface' which doesn't exist;" >&2
+      echo "[ros2_env]       falling back to auto-detect (default profile)." >&2
+      export CYCLONEDDS_URI="file://$ROS_TUTORIAL_ROOT/install/cyclonedds.xml"
+    fi
+    unset _rt_iface_ok
   fi
   unset _rt_iface _rt_xml
 fi

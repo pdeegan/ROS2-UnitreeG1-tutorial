@@ -8,12 +8,18 @@ Everything composes:
   refuses to publish ``/g1/lowcmd`` outside the ``active`` state.
 * **Services (lesson 03):** ``/g1/set_mode`` is the user-facing
   one-shot.
-* **Actions (lesson 04):** ``/g1/wave`` is a long-running goal that
-  publishes feedback and supports cancel.
 * **Pub/sub (lesson 02):** subscribes to ``/g1/lowstate`` to know
   what the robot is doing right now.
-* **Safety latch (lesson 07):** every command path checks the latch
-  *and* defers to the bridge's own check. Two layers; both required.
+* **Safety latch (lesson 07):** the set_mode handler checks
+  ``/g1/safety_engaged`` before publishing (layer 1, application side),
+  and the bridge checks it again before forwarding to the SDK
+  (layer 2, boundary side). Two independent gates; see
+  ``docs/architecture.md`` ("Safety architecture") for the model.
+
+A long-running motion path (an action like ``/g1/walk_to_pose``) is
+the natural next step — see "What to build next" in the walkthrough.
+This lesson keeps it to the service shape so the safety wiring stays
+the focus.
 
 This is the **lesson code** version: motion gains are deliberately
 conservative, motion amplitudes deliberately small. Real production
@@ -122,7 +128,20 @@ class Controller(LifecycleNode):
 
         if self._cmd_pub is None:
             resp.success = False
-            resp.message = "refused: controller not configured/active"
+            resp.message = "refused: controller not configured"
+            return resp
+
+        # LifecyclePublisher silently drops messages outside the active
+        # state. Without this check, set_mode returns success=True while
+        # nothing actually flows downstream.
+        try:
+            state_label = self._state_machine.current_state[1]  # type: ignore[attr-defined]
+        except Exception:
+            state_label = None
+        if state_label not in (None, "active"):
+            resp.success = False
+            resp.message = f"refused: controller in '{state_label}' state (lifecycle set to 'active' first)"
+            self.get_logger().warn(resp.message)
             return resp
 
         mode = req.mode.mode
