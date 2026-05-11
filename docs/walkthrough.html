@@ -1654,6 +1654,87 @@ Not as one turnkey stack. NVIDIA's <a href="https://github.com/NVlabs/GR00T-Whol
 </ul>
 
 <p>None of these change the safety contract. Anything that asks you to bypass the latch (or move it from the bridge into the controller) is a regression — the gate sits at the boundary on purpose.</p>
+
+<h3>Pick this up with a coding agent</h3>
+
+<p>This repo is set up so you can hand any of the projects above to a coding agent (Claude Code, Cursor, Codex CLI, Aider, anything that follows the <a href="https://agents.md">AGENTS.md convention</a>) and let it carry the work. Two reasons it works well as an agent-driven base:</p>
+
+<ul>
+  <li><code>CLAUDE.md</code> at the repo root is symlinked to <code>AGENTS.md</code>, so any AGENTS.md-aware tool reads the project guidelines automatically. It lists the architectural commitments you must not regress (one install path, structural safety latch, no Docker, etc.).</li>
+  <li><code>.claude/</code> ships a specialist roster (<code>ros2-architect</code>, <code>colcon-builder</code>, <code>unitree-integrator</code>, <code>ros-node-author</code>, <code>tutorial-writer</code>, <code>wsl-setup-checker</code>) plus generic SWE agents (<code>code-reviewer</code>, <code>security-reviewer</code>, <code>debugger</code>, <code>perf-auditor</code>, <code>regression-test-writer</code>) and slash commands (<code>/ros-review</code>, <code>/ros-build</code>, <code>/ros-doctor</code>, <code>/lesson-new</code>, <code>/swe-review</code>, <code>/swe-security</code>). The agent knows which one to dispatch.</li>
+</ul>
+
+<h4>Fork-first workflow (recommended)</h4>
+
+<pre><span class="pmt">$</span> <span class="com"># 1. Fork on GitHub UI, then clone YOUR fork</span>
+<span class="pmt">$</span> gh repo fork pdeegan/ROS2-UnitreeG1-tutorial --clone --remote
+<span class="pmt">$</span> <span class="fn">cd</span> ROS2-UnitreeG1-tutorial
+<span class="pmt">$</span> git checkout -b feat/walk-to-pose-action     <span class="com"># one branch per project from the list</span>
+
+<span class="pmt">$</span> <span class="com"># 2. Stand up the tutorial as-is so the agent has a green baseline</span>
+<span class="pmt">$</span> bash scripts/deploy_and_test.sh
+
+<span class="pmt">$</span> <span class="com"># 3. Open the repo in your agent</span>
+<span class="pmt">$</span> claude .                                       <span class="com"># Claude Code</span>
+<span class="pmt">$</span> <span class="com"># or: cursor . / codex . / aider</span></pre>
+
+<p>Fork rather than push to <code>main</code> on the upstream — even if you're a contributor, the safety contract means every change wants a review. Branch per project so the diff stays readable.</p>
+
+<h4>What to actually say to the agent</h4>
+
+<p>Concrete prompts that work because they pin down the contract first, the task second, and the verification third. Copy these verbatim and substitute your project:</p>
+
+<pre><span class="com"># Walk-to-pose action</span>
+Read CLAUDE.md and docs/architecture.md so you understand the safety
+contract. Implement the humanoid_msgs/WalkToPose.action server in
+g1_controller — accept a target Pose2D, stream SportModeState_ back
+as feedback, finish when |error| &lt; 0.1 m. Reference the sport_client
+examples in unitree_sdk2_python. Add a smoke test under tests/ that
+boots the action server and confirms it advertises. Keep the safety
+latch check on the publish side. Run pytest before declaring done.
+
+<span class="com"># Watchdog</span>
+Add a watchdog to ws/src/g1_bridge/g1_bridge/bridge.py: if no
+/g1/lowstate frame arrives for 100 ms while the controller is
+publishing /g1/lowcmd, switch the bridge into damping mode and log
+WARN. Don't touch the structural safety gate at _on_cmd:154. Cover
+it with a test that injects a stale-state condition and asserts the
+mode transition.
+
+<span class="com"># Train a balance policy in MuJoCo</span>
+Use the /ros-bringup slash command to make sure the workspace is
+green. Then clone unitree_rl_mjlab into a sibling directory, follow
+its README to train a G1 stand policy for ~30 minutes, export the
+checkpoint as TorchScript, and write a new ws/src/g1_policy package
+that loads the .pt at startup and republishes inference as
+/g1/lowcmd. The safety latch must still gate every publish.</pre>
+
+<p>Three things make these prompts work, regardless of which agent you use:</p>
+<ul>
+  <li><strong>Name the file paths.</strong> "g1_controller's WalkToPose action" is fuzzy; <code>ws/src/g1_controller/g1_controller/</code> + the existing <code>demo.py</code> pattern is not.</li>
+  <li><strong>Quote the invariant.</strong> "Keep the safety latch check on the publish side" is a structural requirement the agent has to verify; "be safe" is not.</li>
+  <li><strong>Demand a test.</strong> "Run pytest before declaring done" or "add a smoke test under <code>tests/</code>" is the difference between a PR that ships and a PR that breaks on the next push.</li>
+</ul>
+
+<h4>Use the slash commands</h4>
+
+<p>Before you open the PR, run the review chain from the agent:</p>
+
+<pre><span class="pmt">$</span> <span class="com"># Multi-agent parallel review of your branch vs main</span>
+/ros-review main
+
+<span class="pmt">$</span> <span class="com"># Generic SWE review (independent second opinion)</span>
+/swe-review
+
+<span class="pmt">$</span> <span class="com"># Security review specifically — matters for anything touching motion</span>
+/swe-security</pre>
+
+<p>Then open a PR against upstream with the rubric from <a href="https://github.com/pdeegan/ROS2-UnitreeG1-tutorial/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a> filled in. The pull-request template asks for "what concept does this teach" and "what failure mode does it prevent" — answer those two questions and the rest of the review goes fast.</p>
+
+<div class="callout">
+<strong>If the agent gets stuck on the build</strong>
+The <code>colcon-builder</code> specialist exists for exactly this. Dispatch it explicitly: <code>Agent(subagent_type="colcon-builder", prompt="My package.xml has X error, fix it")</code>. The generic agent will sometimes try to install missing deps with apt; the specialist knows the RoboStack + micromamba path and will reach for <code>scripts/ros2_build.sh</code> first.
+</div>
 </section>
 
 <footer>
