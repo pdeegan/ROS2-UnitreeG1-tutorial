@@ -60,6 +60,29 @@ nav.sidebar a {
   font-size: .92rem;
 }
 nav.sidebar a:hover { color: var(--accent); }
+/* Body / content links — explicit so they don't fall back to the
+   browser default deep blue, which is illegible on the dark bg. */
+main a,
+main a:visited,
+.callout a,
+.callout a:visited,
+figcaption a,
+figcaption a:visited,
+footer a,
+footer a:visited {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: rgba(125, 211, 252, 0.45);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+main a:hover,
+.callout a:hover,
+figcaption a:hover,
+footer a:hover {
+  color: var(--accent-2);
+  text-decoration-color: var(--accent-2);
+}
 nav.sidebar a .num {
   display: inline-block; width: 1.8rem;
   color: var(--accent-2); font-weight: 600;
