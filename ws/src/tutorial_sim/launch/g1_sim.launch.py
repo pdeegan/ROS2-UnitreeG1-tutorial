@@ -18,6 +18,7 @@ animate a real URDF without a full IK / motion library.
 from __future__ import annotations
 
 import os
+import re
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -26,6 +27,22 @@ from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+
+
+def _rewrite_mesh_paths(urdf_xml: str, pkg_name: str = "g1_description") -> str:
+    """Convert relative `meshes/foo.STL` refs to `package://<pkg>/meshes/foo.STL`.
+
+    The upstream Unitree G1 URDF uses relative paths like
+    `<mesh filename="meshes/pelvis.STL"/>`. rviz2 cannot resolve those
+    — without a package:// URI it has no way to find the mesh on disk,
+    so the robot model renders as bare TF axes only.
+
+    This rewrite makes the URDF self-contained for any consumer
+    (rviz2, MoveIt, Gazebo) that resolves package:// via ament.
+    """
+    # Match filename="..." not already starting with /, package://, file://, or http
+    pattern = re.compile(r'(<mesh\s+filename=")(?!/|package://|file://|https?://)([^"]+)(")')
+    return pattern.sub(rf'\1package://{pkg_name}/\2\3', urdf_xml)
 
 
 def _bringup(context, *args, **kwargs):
@@ -49,7 +66,7 @@ def _bringup(context, *args, **kwargs):
         )
 
     with open(urdf_path) as f:
-        urdf_xml = f.read()
+        urdf_xml = _rewrite_mesh_paths(f.read())
 
     rviz_path = os.path.join(sim_share, "rviz", rviz_name)
 
