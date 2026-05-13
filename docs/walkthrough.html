@@ -1531,9 +1531,10 @@ A four-node system (bridge, safety, controller, client) where motion commands fl
 
 <p>Google DeepMind maintains <a href="https://github.com/google-deepmind/mujoco_menagerie/tree/main/unitree_g1">mujoco_menagerie/unitree_g1</a>, which ships <code>g1.xml</code>, <code>g1_mjx.xml</code>, and a <code>scene.xml</code> with <code>stand</code> and <code>knees_bent</code> keyframes. The MJX variant has been sim-to-real validated by Unitree.</p>
 
-<pre><span class="pmt">$</span> pip install mujoco
+<pre><span class="pmt">$</span> <span class="fn">source</span> scripts/ros2_env.sh                <span class="com"># put pip inside the micromamba env (Debian 13 marks system python PEP-668 externally-managed)</span>
+<span class="pmt">$</span> pip install mujoco
 <span class="pmt">$</span> git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie ~/mj_menagerie
-<span class="pmt">$</span> python -m mujoco.viewer --mjcf=~/mj_menagerie/unitree_g1/scene.xml
+<span class="pmt">$</span> python -m mujoco.viewer --mjcf=$HOME/mj_menagerie/unitree_g1/scene.xml
 <span class="com"># Click "Pause", then drag the time slider forward. The G1 falls.</span>
 <span class="com"># Load the "stand" keyframe from the Control panel and watch it collapse from upright.</span></pre>
 
