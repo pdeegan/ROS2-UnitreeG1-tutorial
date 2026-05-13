@@ -27,14 +27,35 @@ URL="file://$REPO_ROOT/docs/walkthrough.html"
 DOM=/tmp/walkthrough_smoke_dom.html
 ERR=/tmp/walkthrough_smoke_err.log
 
-echo "rendering: $URL"
-"$CHROMIUM" --headless --disable-gpu --no-sandbox \
-  --enable-logging --v=0 \
-  --virtual-time-budget=3000 \
-  --dump-dom \
-  "$URL" 2>"$ERR" 1>"$DOM"
+# Always render into a fresh profile dir so a stale /tmp/.org.chromium.*
+# lock from a prior chromium instance (full_e2e leaves them around) can't
+# silently produce an empty DOM. Clean up on exit.
+PROFILE_DIR="$(mktemp -d -t walkthrough_smoke_chromium.XXXXXX)"
+trap 'rm -rf "$PROFILE_DIR"' EXIT
 
-[[ -s "$DOM" ]] && ok "DOM rendered ($(wc -c <"$DOM") bytes)" || { fail "empty DOM"; exit 1; }
+echo "rendering: $URL"
+# Strip LD_LIBRARY_PATH + PYTHONHOME + Conda/RoboStack env vars before
+# launching chromium — otherwise the micromamba env's libminizip/libgio
+# get loaded and chromium hits `undefined symbol:
+# unzGetCurrentFileZStreamPos64`. This is invisible to a standalone
+# invocation (no ROS env sourced) but reliably breaks Phase 8b of
+# full_e2e.sh.
+env -u LD_LIBRARY_PATH -u LD_PRELOAD -u PYTHONHOME -u PYTHONPATH \
+    -u CONDA_PREFIX -u CONDA_DEFAULT_ENV -u MAMBA_ROOT_PREFIX \
+    -u CMAKE_PREFIX_PATH -u AMENT_PREFIX_PATH -u COLCON_PREFIX_PATH \
+  "$CHROMIUM" --headless --disable-gpu --no-sandbox \
+    --user-data-dir="$PROFILE_DIR" \
+    --enable-logging --v=0 \
+    --virtual-time-budget=3000 \
+    --dump-dom \
+    "$URL" 2>"$ERR" 1>"$DOM"
+
+if [[ ! -s "$DOM" ]]; then
+  fail "empty DOM"
+  echo "    chromium stderr: $(head -1 "$ERR" 2>/dev/null || echo '(empty)')"
+  exit 1
+fi
+ok "DOM rendered ($(wc -c <"$DOM") bytes)"
 
 # Per-block copy wrappers
 n=$(grep -c 'class="codewrap"' "$DOM" || true)
