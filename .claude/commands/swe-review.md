@@ -1,26 +1,48 @@
 ---
-description: Independent code review of the current branch (or a named diff). Hands off to code-reviewer; returns a severity-sorted findings list with file:line evidence and concrete fix directions. Read-only — no edits.
-argument-hint: [base-branch]
+description: Independent code review of the current branch (or a named diff). Hands off to code-reviewer; returns a verdict and material findings with file:line evidence. Read-only, no edits.
+argument-hint: "[base-branch]"
 allowed-tools: Bash, Read, Agent
 model: inherit
 ---
 
-Independent code review of the current branch against `$1`
-(default `main`).
+The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
 
-Capture the diff first:
+Independent code review of the current branch against `$1`. The
+base branch defaults to `main`.
+
+Capture what is under review first:
 
 ```bash
+git rev-parse "${1:-main}" HEAD
 git diff "${1:-main}"...HEAD --stat
-git diff "${1:-main}"...HEAD
+git diff HEAD --stat
+git ls-files --others --exclude-standard
 ```
 
-Then spawn `code-reviewer` with the diff. Brief: "review the diff
-between $1 and HEAD against the SWE_CORE invariants. Output
-findings only — do not modify code. Use the format defined in your
-agent definition. Cap at 500 words."
+That is the boundary, not the content. The reviewer reads the diff
+itself, file by file; a whole diff pasted into this chat or into a brief
+crowds out the lines that matter. Include committed and uncommitted
+changes when they are in the requested scope, and name the untracked
+source files, leaving out credentials and generated binaries. State the
+base, HEAD and working-tree boundary; an empty committed diff does not
+establish that prepared work is empty.
 
-Surface the punch list to the user verbatim. Recommend the next
+Then spawn `code-reviewer`. Write the brief in the tags its agent
+definition lists under Inputs, with the instruction last:
+
+```text
+<revisions>base <sha>, head <sha>; uncommitted: yes or no; untracked: <files or none></revisions>
+<request><what the owner asked for, in the owner's words where you have them></request>
+<acceptance_criteria><the task's criteria, one per line, or "none given"></acceptance_criteria>
+<author_claims><the author's summary, validation results and known limits, or "none"></author_claims>
+Review the change between the revisions against the SWE_CORE
+invariants. Read the diff yourself as your agent definition sets out,
+and open the code around it as far as each question needs. Output
+findings and coverage only; do not modify code. Use the format defined
+in your agent definition.
+```
+
+Surface the verdict and findings to the user verbatim. Recommend the next
 agent if findings indicate one (`security-reviewer` for trust-
 boundary touches, `perf-auditor` for hot-path touches,
 `regression-test-writer` for missing test coverage).

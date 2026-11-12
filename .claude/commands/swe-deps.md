@@ -1,11 +1,14 @@
 ---
-description: Audit dependency changes (adds, removes, version bumps, lockfile drift) for CVEs, license drift, maintenance signal, and bundle bloat. Hands off to dependency-auditor; read-only — no edits.
-argument-hint: [base-branch]
+description: Audit dependency changes (adds, removes, version bumps, lockfile drift) for CVEs, license drift, maintenance signal, and bundle bloat. Hands off to dependency-auditor; read-only, no edits.
+argument-hint: "[base-branch]"
 allowed-tools: Bash, Read, Agent
 model: inherit
 ---
 
-Audit dependency changes against `$1` (default `main`).
+The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
+
+Audit dependency changes against `$1`. The base branch defaults to
+`main`.
 
 Capture the manifest and lockfile diffs:
 
@@ -18,9 +21,10 @@ git diff "${1:-main}"...HEAD -- Cargo.toml Cargo.lock go.mod go.sum
 Then spawn `dependency-auditor`. Brief: "audit per the format
 defined in your agent definition. For ADD and BUMP-MAJOR, check
 CVEs and maintenance signal. For REMOVE, grep for remaining
-imports. Confirm lockfile and manifest agree. Cap at 400 words."
+imports. Confirm lockfile and manifest agree. Keep the prose under 400
+words and never drop a finding to fit."
 
-Surface the verdict to the user. If CRITICAL or HIGH findings,
+Surface the verdict to the user. If there is a P0 or P1 finding,
 recommend BLOCK-MERGE.
 
 Do not modify any manifest or lockfile.

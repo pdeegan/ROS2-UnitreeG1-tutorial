@@ -1,27 +1,41 @@
 ---
-description: Independent security review of the current branch (or a named diff). Hands off to security-reviewer; returns severity-sorted CRITICAL/HIGH/MEDIUM/LOW findings against the OWASP top-10. Read-only — no edits.
-argument-hint: [base-branch]
+description: Independent security review of the current branch (or a named diff). Hands off to security-reviewer; returns findings graded P0 to P3 against the OWASP top-10. Read-only, no edits.
+argument-hint: "[base-branch]"
 allowed-tools: Bash, Read, Agent
 model: inherit
 ---
 
-Independent security review of the current branch against `$1`
-(default `main`).
+The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
 
-Capture the diff first:
+Independent security review of the current branch against `$1`.
+The base branch defaults to `main`.
+
+Capture what is under review first:
 
 ```bash
+git rev-parse "${1:-main}" HEAD
 git diff "${1:-main}"...HEAD --stat
-git diff "${1:-main}"...HEAD
 ```
 
-Then spawn `security-reviewer` with the diff. Brief: "review per
-the format defined in your agent definition. Walk the OWASP top-10
-quick-check on every hunk that touches a trust boundary. Output
-findings only — do not modify code. Cap at 500 words."
+Then spawn `security-reviewer`. Write the brief in the tags
+`code-reviewer` lists under Inputs, with the instruction last:
 
-Surface the findings to the user verbatim. If there are CRITICAL or
-HIGH findings, recommend BLOCK-MERGE. If only LOW/INFO, recommend
-SHIP-WITH-NOTE.
+```text
+<revisions>base <sha>, head <sha>; uncommitted: yes or no; untracked: <files or none></revisions>
+<request><what the owner asked for, in the owner's words where you have them></request>
+<acceptance_criteria><the task's criteria, one per line, or "none given"></acceptance_criteria>
+<author_claims><the author's summary, validation results and known limits, or "none"></author_claims>
+Review the change between the revisions per the format defined in your
+agent definition. Read the diff yourself, and follow each input into
+the unchanged code that supplies or consumes it. Walk the OWASP top-10
+quick-check on every hunk that touches a trust boundary. Output
+findings only; do not modify code. Keep the prose under 500 words and
+never drop a finding to fit.
+```
+
+Surface the findings to the user verbatim. If there is a P0 or P1
+finding, recommend BLOCK-MERGE. If the worst is P2, recommend
+SHIP-WITH-NOTE, or BLOCK-MERGE when the board is in lock down and the
+finding is on a path a user reaches. If only P3, recommend SHIP.
 
 Do not commit. Do not auto-apply fixes.
