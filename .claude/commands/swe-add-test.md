@@ -5,8 +5,6 @@ allowed-tools: Bash, Read, Edit, Write, Agent
 model: inherit
 ---
 
-The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
-
 Write a failing test that reproduces the named bug (or specifies
 the new behavior).
 

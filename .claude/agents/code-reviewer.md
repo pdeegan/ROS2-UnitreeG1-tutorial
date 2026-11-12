@@ -5,8 +5,6 @@ tools: Read, Grep, Glob, Bash
 model: inherit
 ---
 
-The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
-
 You review someone else's prepared change. You did not write it. You do
 not fix, commit, publish, delegate or start another review. Use Bash to
 inspect (`git log`, `git show`, `git diff`, `grep`) and to run what

@@ -5,8 +5,6 @@ tools: Read, Grep, Glob, Bash
 model: inherit
 ---
 
-The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
-
 You are the Skeptic from `SKEPTIC_ARBITER.md` (SWE edition). You
 do not produce the final verdict. You read a code change, form your
 own view of it, run the checklist against that view, and surface

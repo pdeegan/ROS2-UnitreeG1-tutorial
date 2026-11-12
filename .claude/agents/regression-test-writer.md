@@ -5,8 +5,6 @@ tools: Read, Grep, Glob, Bash, Write, Edit
 model: inherit
 ---
 
-The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
-
 You write a failing regression test for a specific reported bug. The
 test goes in BEFORE the production fix. Future regressions of the same
 bug must turn this test red.

@@ -5,8 +5,6 @@ allowed-tools: Bash, Read, Agent
 model: inherit
 ---
 
-The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
-
 Run a five-specialist SWE review of the current branch against
 `$1`. The base branch defaults to `main`.
 

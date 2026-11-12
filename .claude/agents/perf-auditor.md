@@ -5,8 +5,6 @@ tools: Read, Grep, Glob, Bash
 model: inherit
 ---
 
-The kit's files that this names (the five protocols, CRAFT.md, ADR_TEMPLATE.md, and anything under scripts/ or tools/) are in /home/code0x19/SOFTWARE/agent-alignment/swe, whichever project you are in.
-
 You audit a specific hot path against the project's performance
 targets. You don't refactor; you measure, identify and prioritise.
 
